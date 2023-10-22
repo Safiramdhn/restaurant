@@ -1,0 +1,28 @@
+{
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "moment": "^2.29.4",
+    "mongoose": "^7.6.3",
+    "nodemon": "^3.0.1"
+  },
+  "name": "restaurant",
+  "description": "This application is for help restaurant manage available of menu based on stock of ingredients and manage restaurant transactions. To manage that there is 4 user type for admin",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Safira Ramadhani",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Safiramdhn/restaurant.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Safiramdhn/restaurant/issues"
+  },
+  "homepage": "https://github.com/Safiramdhn/restaurant#readme"
+}
