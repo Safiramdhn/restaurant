@@ -1,4 +1,4 @@
-const { gql } = require('graphql');
+const { gql } = require('apollo-server-express');
 const { merge } = require('lodash');
 
 const UserTypes = require('./userTypes');
@@ -7,12 +7,12 @@ const typedef = gql`
 	type Query
 	type Mutation
 `;
-const typedefs = [typedef, UserTypes.typedef];
+const typeDefs = [typedef, UserTypes.typedef];
 
 let resolvers = {};
 resolvers = merge(resolvers, UserTypes.resolvers);
 
 module.exports = {
-	typedefs,
+	typeDefs,
 	resolvers,
 };
