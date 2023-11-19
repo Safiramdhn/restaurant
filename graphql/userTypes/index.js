@@ -5,5 +5,5 @@ const resolvers = require('./user_type.resolvers');
 module.exports = {
 	UserTypeModel,
 	typedef,
-    resolvers,
+	resolvers,
 };

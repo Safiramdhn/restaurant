@@ -45,5 +45,5 @@ const startServer = async () => {
 	await server.start();
 	server.applyMiddleware({ app });
 };
-startServer()
+startServer();
 module.exports = app;
