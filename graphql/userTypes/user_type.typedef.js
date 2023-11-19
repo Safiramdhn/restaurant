@@ -1,4 +1,4 @@
-const { gql } = require('graphql');
+const { gql } = require('apollo-server-express');
 
 const UserTypeTypedef = gql`
     type UserType {
@@ -49,9 +49,17 @@ const UserTypeTypedef = gql`
         delete: Boolean
     }
 
-    type extend Query {
+    input UserTypeInput {
+        name: String
+    }
+
+    extend type Query {
         GetAllUserTypes : [UserType]
         GetOneUserType(_id: ID) : UserType
+    }
+
+    extend type Mutation {
+        CreateUserType(input: UserTypeInput): UserType
     }
 `;
 
