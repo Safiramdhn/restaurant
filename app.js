@@ -1,5 +1,7 @@
 'use strict';
 require('./utils/database');
+const dotenv = require('dotenv');
+dotenv.config();
 
 const express = require('express');
 const { makeExecutableSchema } = require('@graphql-tools/schema');
@@ -39,8 +41,9 @@ let server = new ApolloServer({
 		// loaders: loaders(),
 	}),
 });
-(async () => {
+const startServer = async () => {
 	await server.start();
 	server.applyMiddleware({ app });
-})
+};
+startServer()
 module.exports = app;

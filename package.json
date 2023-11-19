@@ -22,7 +22,7 @@
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
-    "dev": "nodemon --experimental-worker -r dotenv/config ./bin/www dotenv_config_path=./.env_dev"
+    "dev": "nodemon --experimental-worker -r dotenv/config ./bin/www dotenv_config_path=./.env"
   },
   "author": "Safira Ramadhani",
   "license": "ISC",
