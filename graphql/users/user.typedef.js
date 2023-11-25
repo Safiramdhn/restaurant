@@ -13,8 +13,8 @@ const UserTypedefs = gql`
 	}
 
 	enum UserCivility {
-		Mr
-		Mrs
+		mr
+		mrs
 	}
 
 	enum UserGender {
@@ -28,12 +28,12 @@ const UserTypedefs = gql`
 	}
 
 	input UserInput {
-		username: String
+		username: String!
 		password: String!
 		first_name: String
 		last_name: String
 		gender: UserGender
-		user_type_id: UserTypeEnum
+		user_type_id: ID
 	}
 
 	type LoginUser {
