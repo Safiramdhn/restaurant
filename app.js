@@ -1,8 +1,5 @@
 'use strict';
 require('./utils/database');
-const dotenv = require('dotenv');
-dotenv.config();
-
 const express = require('express');
 const { makeExecutableSchema } = require('@graphql-tools/schema');
 const { applyMiddleware } = require('graphql-middleware');
