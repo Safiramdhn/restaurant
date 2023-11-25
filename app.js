@@ -7,6 +7,7 @@ const { ApolloServer } = require('apollo-server-express');
 
 const { typeDefs, resolvers } = require('./graphql');
 const authMiddleware = require('./middleware/auth-middleware');
+const { loaders } = require('./loader');
 
 const app = express();
 app.use(express.json());
@@ -35,7 +36,7 @@ let server = new ApolloServer({
 	},
 	context: (req) => ({
 		req: req.req,
-		// loaders: loaders(),
+		loaders: loaders(),
 	}),
 });
 const startServer = async () => {
