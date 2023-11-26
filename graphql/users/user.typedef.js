@@ -9,7 +9,7 @@ const UserTypedefs = gql`
 		civility: UserCivility
 		gender: UserGender
 		status: StatusEnum
-		user_type_id: UserType
+		user_type: UserType
 	}
 
 	enum UserCivility {
@@ -28,12 +28,12 @@ const UserTypedefs = gql`
 	}
 
 	input UserInput {
-		username: String!
-		password: String!
+		username: String
+		password: String
 		first_name: String
 		last_name: String
 		gender: UserGender
-		user_type_id: ID
+		user_type: ID
 	}
 
 	type LoginUser {
@@ -48,6 +48,8 @@ const UserTypedefs = gql`
 	extend type Mutation {
 		CreateUser(user_input: UserInput): User
 		Login(username: String!, password: String!): LoginUser
+		UpdateUser(_id: ID!, user_input: UserInput): User
+		DeleteUser(_id: ID!): String
 	}
 `;
 

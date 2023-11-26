@@ -25,6 +25,8 @@ let authMiddleware = {
 	},
 	Mutation: {
 		CreateUser: requireAuthJwt,
+		UpdateUser: requireAuthJwt,
+		DeleteUser: requireAuthJwt,
 	},
 };
 

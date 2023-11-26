@@ -10,7 +10,7 @@ const UserSchema = new Schema(
 		civility: { type: String, enum: ['mr', 'mrs'] },
 		gender: { type: String, enum: ['male', 'female'] },
 		status: { type: String, enum: ['active', 'deleted'], default: 'active' },
-		user_type_id: { type: mongoose.Schema.ObjectId, ref: 'user_types' },
+		user_type: { type: mongoose.Schema.ObjectId, ref: 'user_types' },
 	},
 	{
 		timestamps: true,
