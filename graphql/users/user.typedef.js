@@ -1,56 +1,56 @@
 const { gql } = require('apollo-server-express');
 
 const UserTypedefs = gql`
-	type User {
-		_id: ID!
-		username: String
-		first_name: String
-		last_name: String
-		civility: UserCivility
-		gender: UserGender
-		status: StatusEnum
-		user_type: UserType
-	}
+  type User {
+    _id: ID!
+    username: String
+    first_name: String
+    last_name: String
+    civility: UserCivility
+    gender: UserGender
+    status: StatusEnum
+    user_type: UserType
+  }
 
-	enum UserCivility {
-		mr
-		mrs
-	}
+  enum UserCivility {
+    mr
+    mrs
+  }
 
-	enum UserGender {
-		male
-		female
-	}
+  enum UserGender {
+    male
+    female
+  }
 
-	enum StatusEnum {
-		active
-		deleted
-	}
+  enum StatusEnum {
+    active
+    deleted
+  }
 
-	input UserInput {
-		username: String
-		password: String
-		first_name: String
-		last_name: String
-		gender: UserGender
-		user_type: ID
-	}
+  input UserInput {
+    username: String
+    password: String
+    first_name: String
+    last_name: String
+    gender: UserGender
+    user_type: ID
+  }
 
-	type LoginUser {
-		token: String!
-	}
+  type LoginUser {
+    token: String!
+  }
 
-	extend type Query {
-		GetAllUsers: [User]
-		GetOneUser(_id: ID!): User
-	}
+  extend type Query {
+    GetAllUsers: [User]
+    GetOneUser(_id: ID!): User
+  }
 
-	extend type Mutation {
-		CreateUser(user_input: UserInput): User
-		Login(username: String!, password: String!): LoginUser
-		UpdateUser(_id: ID!, user_input: UserInput): User
-		DeleteUser(_id: ID!): String
-	}
+  extend type Mutation {
+    CreateUser(user_input: UserInput): User
+    Login(username: String!, password: String!): LoginUser
+    UpdateUser(_id: ID!, user_input: UserInput): User
+    DeleteUser(_id: ID!): String
+  }
 `;
 
 module.exports = UserTypedefs;
