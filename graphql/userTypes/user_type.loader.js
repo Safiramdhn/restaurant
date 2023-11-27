@@ -4,7 +4,6 @@ const UserTypeModel = require('./user_type.model');
 
 const UserTypeLoaderData = async (userTypeIds) => {
 	let userTypes = await UserTypeModel.find({
-		status: 'active',
 		_id: { $in: userTypeIds },
 	}).lean();
 
