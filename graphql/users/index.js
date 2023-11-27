@@ -4,8 +4,8 @@ const resolvers = require('./user.resolvers');
 const UserLoader = require('./user.loader');
 
 module.exports = {
-	UserModel,
-	typeDefs,
-	resolvers,
-	UserLoader
+  UserModel,
+  typeDefs,
+  resolvers,
+  UserLoader,
 };
