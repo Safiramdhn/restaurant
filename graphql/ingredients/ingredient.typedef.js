@@ -7,12 +7,6 @@ const IngredientTypedefs = gql`
 		is_available: Boolean
 		status: StatusEnum
 		is_additional_ingredient: Boolean
-		update_histories: [IngredientHistory]
-	}
-
-	type IngredientHistory {
-		date: String
-		user: User
 	}
 
 	input IngredientInput {
@@ -22,6 +16,11 @@ const IngredientTypedefs = gql`
 		status: StatusEnum
 		is_additional_ingredient: Boolean
 	}
+
+    extend type Query {
+        GetAllIngredients(): [Ingredient]
+        GetOneIngredient(_id: ID!): Ingredient
+    }
 `;
 
 module.exports = IngredientTypedefs;
