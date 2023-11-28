@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const IngredientSchema = new Schema(
   {
-    name: { type: String, require: true },
+    name: { type: String, require: true, unique: true },
     stock_amount: { type: Number, default: 0 },
     is_available: { type: Boolean },
     status: { type: String, enum: ['active', 'deleted'], default: 'active' },

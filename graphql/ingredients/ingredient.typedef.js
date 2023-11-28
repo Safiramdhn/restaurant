@@ -21,6 +21,12 @@ const IngredientTypedefs = gql`
         GetAllIngredients(): [Ingredient]
         GetOneIngredient(_id: ID!): Ingredient
     }
+
+	extend type Mutation {
+		AddIngredient(ingredient_input: IngredientInput): Ingredient
+		UpdateIngredient(_id: ID!, ingredient_input: IngredientInput): Ingredient
+		DeleteIngredient(_id: ID!): String
+	}
 `;
 
 module.exports = IngredientTypedefs;

@@ -13,7 +13,7 @@ const requireAuthJwt = async (resolver, parent, args, ctx, info) => {
 
   if (!user) throw new AuthenticationError('Unauthorization');
 
-  ctx.userId = user;
+  ctx.userId = user._id;
   return resolver();
 };
 
