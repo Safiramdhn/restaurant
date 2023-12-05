@@ -10,6 +10,7 @@ const IngredientSchema = new Schema(
     is_additional_ingredient: { type: Boolean, default: false },
     update_histories: [
       {
+        _id: false,
         date: { type: String },
         user: { type: mongoose.Schema.ObjectId, ref: 'users' },
       },

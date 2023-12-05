@@ -27,6 +27,9 @@ let authMiddleware = {
     CreateUser: requireAuthJwt,
     UpdateUser: requireAuthJwt,
     DeleteUser: requireAuthJwt,
+    AddIngredient: requireAuthJwt,
+    UpdateIngredient: requireAuthJwt,
+    DeleteIngredient: requireAuthJwt,
   },
 };
 

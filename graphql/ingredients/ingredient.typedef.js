@@ -2,6 +2,7 @@ const { gql } = require('apollo-server-express');
 
 const IngredientTypedefs = gql`
 	type Ingredient {
+		_id: ID!
 		name: String
 		stock_amount: Int
 		is_available: Boolean
@@ -18,7 +19,7 @@ const IngredientTypedefs = gql`
 	}
 
     extend type Query {
-        GetAllIngredients(): [Ingredient]
+        GetAllIngredients: [Ingredient]
         GetOneIngredient(_id: ID!): Ingredient
     }
 
