@@ -3,15 +3,71 @@ const UserModel = require('../users/user.model');
 const UserTypes = require('../userTypes/user_type.model');
 
 const moment = require('moment');
+const _ = require('lodash');
 
 //****Query */
 
-const GetAllIngredients = async (parent) => {
-  const ingredients = await IngredientModel.find({
-    status: 'active',
-  }).lean();
+const GetAllIngredients = async (parent, { filter, pagination, sorting }) => {
+  let aggregateQuery = [];
+  let queryFilter = {
+    $and: [{ status: 'active' }],
+  };
+  let sort = {};
 
-  return ingredients;
+  if (filter) {
+    if (filter.name) {
+      queryFilter.$and.push({ name: { $regex: filter.name, $options: 'i' } });
+    }
+
+    if (filter.is_available) {
+      queryFilter.$and.push({ is_available: filter.is_available });
+    }
+
+    if (filter.is_additional_ingredient) {
+      queryFilter.$and.push({ is_additional_ingredient: filter.is_additional_ingredient });
+    }
+  }
+
+  if (sorting) {
+    if (sorting.name) {
+      sort = { ...sort, name: sorting.name === 'asc' ? 1 : -1 };
+    } else if (sorting.stock) {
+      sort = { ...sort, stock_amount: sorting.stock === 'asc' ? 1 : -1 };
+    } else if (sorting.available) {
+      sort = { ...sort, is_available: sorting.available === 'asc' ? 1 : -1 };
+    } else if (sorting.additional) {
+      sort = { ...sort, is_additional_ingredient: sorting.additional === 'asc' ? 1 : -1 };
+    }
+  }
+
+  aggregateQuery.push({
+    $match: queryFilter,
+  }, {
+    $sort: sort && !_.isEmpty(sort) ? sort : {createAt: -1},
+  });
+
+  if (pagination) {
+    aggregateQuery.push({
+      $facet: {
+        data: [{ $skip: pagination.limit * pagination.page }, { $limit: pagination.limit }],
+        countData: [{ $group: { _id: null, count: { $sum: 1 } } }],
+      },
+    });
+    let ingredients = await IngredientModel.aggregate(aggregateQuery);
+    return ingredients[0].data.map((ingredient) => {
+      return {
+        ...ingredient,
+        count_document: ingredients[0].countData[0].count,
+      };
+    });
+  } else {
+    let ingredients = await IngredientModel.aggregate(aggregateQuery);
+    return ingredients.map((ingredient) => {
+      return {
+        ...ingredient,
+      };
+    });
+  }
 };
 
 const GetOneIngredient = async (parent, { _id }) => {

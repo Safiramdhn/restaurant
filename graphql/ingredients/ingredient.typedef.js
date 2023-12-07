@@ -6,20 +6,36 @@ const IngredientTypedefs = gql`
 		name: String
 		stock_amount: Int
 		is_available: Boolean
-		status: StatusEnum
 		is_additional_ingredient: Boolean
+		count_document: Int
 	}
 
 	input IngredientInput {
 		name: String
 		stock_amount: Int
 		is_available: Boolean
-		status: StatusEnum
 		is_additional_ingredient: Boolean
 	}
 
+	input Pagination {
+		limit: Int
+		page: Int
+	}
+
+	enum Sorting {
+		asc
+		desc
+	}
+
+	input IngredientSorting {
+		name: Sorting
+		stock: Sorting
+		available: Sorting
+		additional: Sorting
+	}
+
     extend type Query {
-        GetAllIngredients: [Ingredient]
+        GetAllIngredients(filter: IngredientInput, pagination: Pagination, sorting: IngredientSorting): [Ingredient]
         GetOneIngredient(_id: ID!): Ingredient
     }
 
