@@ -19,7 +19,7 @@ const GetOneUser = async (parent, { _id }) => {
 const CreateUser = async (parent, { user_input }) => {
   if (!user_input.username && !user_input.password) throw new Error('Username and password are required');
 
-  const existedUser = await UserModel.findOne({ username: user_input.username }).lean();
+  const existedUser = await UserModel.findOne({ username: user_input.username, status: 'active' }).lean();
   if (existedUser) throw new Error('Username already existed');
 
   if (user_input.password) {
@@ -69,7 +69,7 @@ const UpdateUser = async (parent, { _id, user_input }) => {
   }
 
   if (user_input.username && user_input.username !== oldUser.username) {
-    let existedUser = await UserModel.findOne({ username: user_input.username }).lean;
+    let existedUser = await UserModel.findOne({ username: user_input.username, status: 'active' }).lean;
     if (existedUser) throw new Error(`Username ${user_input.username} is already existed`);
   }
 
