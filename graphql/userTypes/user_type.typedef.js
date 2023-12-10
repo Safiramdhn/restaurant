@@ -64,10 +64,6 @@ const UserTypeTypedef = gql`
     GetAllUserTypes: [UserType]
     GetOneUserType(_id: ID): UserType
   }
-
-  extend type Mutation {
-    CreateUserType(input: UserTypeInput): UserType
-  }
 `;
 
 module.exports = UserTypeTypedef;
