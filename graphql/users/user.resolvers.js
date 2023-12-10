@@ -26,10 +26,6 @@ const CreateUser = async (parent, { user_input }) => {
     user_input.password = await encrypt(user_input.password, 10);
   }
 
-  if (user_input.gender) {
-    user_input.civility = user_input.gender === 'male' ? 'mr' : 'mrs';
-  }
-
   if (user_input.user_type) {
     const userType = await UserTypeModel.findOne({ _id: user_input.user_type, status: 'active' }).lean();
     if (!userType) throw new Error('Invalid user type');
@@ -71,14 +67,6 @@ const UpdateUser = async (parent, { _id, user_input }) => {
   if (user_input.username && user_input.username !== oldUser.username) {
     let existedUser = await UserModel.findOne({ username: user_input.username, status: 'active' }).lean;
     if (existedUser) throw new Error(`Username ${user_input.username} is already existed`);
-  }
-
-  if (user_input.gender && user_input.gender !== oldUser.gender) {
-    user_input.civility = user_input.gender === 'male' ? 'mr' : 'mrs';
-  }
-
-  if (user_input.civility && user_input.civility !== oldUser.civility) {
-    user_input.gender = user_input.civility === 'mr' ? 'male' : 'female';
   }
 
   if (user_input.user_type && user_input.user_type.toString() !== oldUser.user_type.toString()) {
