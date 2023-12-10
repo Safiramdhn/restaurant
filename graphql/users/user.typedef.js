@@ -6,20 +6,8 @@ const UserTypedefs = gql`
     username: String
     first_name: String
     last_name: String
-    civility: UserCivility
-    gender: UserGender
     status: StatusEnum
     user_type: UserType
-  }
-
-  enum UserCivility {
-    mr
-    mrs
-  }
-
-  enum UserGender {
-    male
-    female
   }
 
   enum StatusEnum {
@@ -32,7 +20,6 @@ const UserTypedefs = gql`
     password: String
     first_name: String
     last_name: String
-    gender: UserGender
     user_type: ID
   }
 
