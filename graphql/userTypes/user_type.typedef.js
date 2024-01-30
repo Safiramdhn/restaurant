@@ -4,7 +4,7 @@ const UserTypeTypedef = gql`
   type UserType {
     _id: ID
     name: String
-    app_permission: UserTypePermissions
+    app_permissions: UserTypePermissions
   }
 
   type UserTypePermissions {

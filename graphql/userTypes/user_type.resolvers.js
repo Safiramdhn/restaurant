@@ -2,7 +2,7 @@ const UserTypeModel = require('./user_type.model');
 
 // ******** query
 const GetAllUserTypes = async () => {
-  const userTypes = await UserTypeModel.find().lean();
+  const userTypes = await UserTypeModel.find({status: 'active'}).lean();
   return userTypes;
 };
 

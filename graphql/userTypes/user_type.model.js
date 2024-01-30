@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 const UserTypeSchema = new Schema(
   {
     name: { type: String },
-    app_permission: {
+    app_permissions: {
       homepage: { type: Boolean, default: false },
       ingredients: {
         view: { type: Boolean, default: false },
