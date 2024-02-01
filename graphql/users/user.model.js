@@ -8,7 +8,7 @@ const UserSchema = new Schema(
     first_name: { type: String, default: '' },
     last_name: { type: String, default: '' },
     status: { type: String, enum: ['active', 'deleted'], default: 'active' },
-    user_type: { type: mongoose.Schema.ObjectId, ref: 'user_types' },
+    user_type: { type: Schema.ObjectId, ref: 'user_types' },
   },
   {
     timestamps: true,

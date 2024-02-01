@@ -65,7 +65,7 @@ const UpdateUser = async (parent, { _id, user_input }) => {
   }
 
   if (user_input.username && user_input.username !== oldUser.username) {
-    let existedUser = await UserModel.findOne({ username: user_input.username, status: 'active' }).lean;
+    let existedUser = await UserModel.findOne({ _id: { $ne: _id }, username: user_input.username, status: 'active' }).lean();
     if (existedUser) throw new Error(`Username ${user_input.username} is already existed`);
   }
 
