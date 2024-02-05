@@ -14,29 +14,27 @@ const GetAllIngredients = async (parent, { filter, pagination, sorting }) => {
   };
   let sort = {};
 
+  // **** Find ingredient using filter
   if (filter) {
     if (filter.name) {
       queryFilter.$and.push({ name: { $regex: filter.name, $options: 'i' } });
     }
 
     if (filter.is_available) {
-      queryFilter.$and.push({ is_available: filter.is_available });
+      queryFilter.$and.push({ is_available: filter.is_available.toLowerCase() === 'yes' ? true : false });
     }
 
     if (filter.is_additional_ingredient) {
-      queryFilter.$and.push({ is_additional_ingredient: filter.is_additional_ingredient });
+      queryFilter.$and.push({ is_additional_ingredient: filter.is_additional_ingredient.toLowerCase() === 'yes' ? true : false });
     }
   }
 
+  // ****  Sort the data
   if (sorting) {
     if (sorting.name) {
       sort = { ...sort, name: sorting.name === 'asc' ? 1 : -1 };
     } else if (sorting.stock) {
       sort = { ...sort, stock_amount: sorting.stock === 'asc' ? 1 : -1 };
-    } else if (sorting.available) {
-      sort = { ...sort, is_available: sorting.available === 'asc' ? 1 : -1 };
-    } else if (sorting.additional) {
-      sort = { ...sort, is_additional_ingredient: sorting.additional === 'asc' ? 1 : -1 };
     }
   }
 
@@ -46,6 +44,7 @@ const GetAllIngredients = async (parent, { filter, pagination, sorting }) => {
     $sort: sort && !_.isEmpty(sort) ? sort : {createAt: -1},
   });
 
+  // use $facet if use pagination
   if (pagination) {
     aggregateQuery.push({
       $facet: {
@@ -77,11 +76,14 @@ const GetOneIngredient = async (parent, { _id }) => {
 
 //****Mutation */
 const AddIngredient = async (parent, { ingredient_input }, ctx) => {
+  // check user permission
   const userLogin = await UserModel.findById(ctx.userId)
     .populate([{ path: 'user_type', select: 'name' }])
     .lean();
-  if (userLogin && userLogin.user_type && userLogin.user_type.name !== 'Stock Admin') throw new Error('Only Stock Admin can add new ingredient');
+  if (userLogin && userLogin.user_type && userLogin.user_type.name !== 'General Admin' && userLogin.user_type.name !== 'Stock Admin')
+    throw new Error('Only General Admin or Stock Admin can add new ingredient');
 
+  // ingredient name is mandatory
   if (!ingredient_input.name) {
     throw new Error('Ingredient must have a name');
   } else {
@@ -93,35 +95,49 @@ const AddIngredient = async (parent, { ingredient_input }, ctx) => {
     if (existedIngredient) throw new Error('Ingredient name already existed');
   }
 
+  // update ingredient availablity when stock amount more than 0
+  if (ingredient_input.stock_amount > 0) {
+    ingredient_input.is_available = true;
+  }
+
   const ingredient = await IngredientModel.create(ingredient_input);
   return ingredient;
 };
 
 const UpdateIngredient = async (parent, { _id, ingredient_input }, ctx) => {
+  // check user permission
   const userLogin = await UserModel.findById(ctx.userId)
     .populate([{ path: 'user_type', select: 'name' }])
     .lean();
-  if (userLogin && userLogin.user_type && userLogin.user_type.name !== 'Stock Admin') throw new Error('Only Stock Admin can edit the ingredient');
+  if (userLogin && userLogin.user_type && userLogin.user_type.name !== 'General Admin' && userLogin.user_type.name !== 'Stock Admin')
+    throw new Error('Only General Admin or Stock Admin can add new ingredient');
 
   const oldIngredientData = await IngredientModel.findById(_id).lean();
+
   if (ingredient_input.name && ingredient_input.name !== oldIngredientData.name) {
-    // check existed active ingredient
+    // check existed active ingredient with different id
     const existedIngredient = await IngredientModel.find({
       name: ingredient_input.name,
       status: 'active',
+      _id: {
+        $ne: _id,
+      },
     }).lean();
     if (existedIngredient) throw new Error('Ingredient name already existed');
   }
 
-  if (ingredient_input.stock_amount) {
-    ingredient_input.stock_amount += oldIngredientData.stock_amount;
+  // update ingredient availablity when stock amount more than 0
+  if (ingredient_input.stock_amount && !oldIngredientData.is_available) {
+    ingredient_input.is_available = true;
+  } else if (ingredient_input.stock_amount === 0 &&  oldIngredientData.is_available) {
+    ingredient_input.is_available = false;
   }
 
   const updateIngredient = await IngredientModel.findByIdAndUpdate(
     _id,
     {
       $set: ingredient_input,
-      $addToSet: {
+      $push: {
         update_histories: {
           date: moment().format('DD/MM/YYYY'),
           user: userLogin._id,
@@ -134,10 +150,12 @@ const UpdateIngredient = async (parent, { _id, ingredient_input }, ctx) => {
 };
 
 const DeleteIngredient = async (parent, { _id }, ctx) => {
+  // check user permission
   const userLogin = await UserModel.findById(ctx.userId)
     .populate([{ path: 'user_type', select: 'name' }])
     .lean();
-  if (userLogin && userLogin.user_type && userLogin.user_type.name !== 'Stock Admin') throw new Error('Only Stock Admin can delete the ingredient');
+  if (userLogin && userLogin.user_type && userLogin.user_type.name !== 'General Admin' && userLogin.user_type.name !== 'Stock Admin')
+    throw new Error('Only General Admin or Stock Admin can add new ingredient');
 
   // if ingredient was used in published recipes then don't delete it
 

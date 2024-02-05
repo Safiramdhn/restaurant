@@ -13,8 +13,13 @@ const IngredientTypedefs = gql`
 	input IngredientInput {
 		name: String
 		stock_amount: Int
-		is_available: Boolean
 		is_additional_ingredient: Boolean
+	}
+
+	input IngredientFilterInput {
+		name: String
+		is_available: String
+		is_additional_ingredient: String
 	}
 
 	input Pagination {
@@ -27,15 +32,13 @@ const IngredientTypedefs = gql`
 		desc
 	}
 
-	input IngredientSorting {
+	input IngredientSortingInput {
 		name: Sorting
 		stock: Sorting
-		available: Sorting
-		additional: Sorting
 	}
 
     extend type Query {
-        GetAllIngredients(filter: IngredientInput, pagination: Pagination, sorting: IngredientSorting): [Ingredient]
+        GetAllIngredients(filter: IngredientFilterInput, pagination: Pagination, sorting: IngredientSortingInput): [Ingredient]
         GetOneIngredient(_id: ID!): Ingredient
     }
 
