@@ -24,6 +24,8 @@ let authMiddleware = {
     GetOneUserType: requireAuthJwt,
     GetAllIngredients: requireAuthJwt,
     GetOneIngredient: requireAuthJwt,
+    GetAllRecipes: requireAuthJwt,
+    GetOneRecipe: requireAuthJwt,
   },
   Mutation: {
     CreateUser: requireAuthJwt,

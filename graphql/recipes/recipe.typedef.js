@@ -34,6 +34,7 @@ const RecipeTypedefs = gql`
 
   extend type Query {
     GetAllRecipes(filter: RecipeFilterInput, sorting: RecipeSortingInput, pagination: Pagination): [Recipe]
+    GetOneRecipe(_id: ID): Recipe
   }
 `;
 

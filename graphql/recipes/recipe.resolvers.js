@@ -74,8 +74,14 @@ const GetAllRecipes = async (parent, { filter, sorting, pagination }) => {
   }
 };
 
+const GetOneRecipe = async (parent, { _id }) => {
+  const recipe = await RecipeModel.findById(_id).lean();
+  return recipe;
+};
+
 module.exports = {
   Query: {
     GetAllRecipes,
+    GetOneRecipe,
   },
 };
