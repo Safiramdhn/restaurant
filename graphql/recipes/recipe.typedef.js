@@ -32,9 +32,24 @@ const RecipeTypedefs = gql`
     discount_amount: SortingEnum
   }
 
+  input RecipeInput {
+    name: String
+    price: Int
+    ingredient_details: [IngredientDetailInput]
+  }
+
+  input IngredientDetailInput {
+    ingredient: ID
+    stock_used: Int
+  }
+
   extend type Query {
     GetAllRecipes(filter: RecipeFilterInput, sorting: RecipeSortingInput, pagination: Pagination): [Recipe]
     GetOneRecipe(_id: ID): Recipe
+  }
+
+  extend type Mutation {
+    CreateRecipe(recipe_input: RecipeInput): Recipe
   }
 `;
 

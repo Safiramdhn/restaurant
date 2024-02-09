@@ -85,14 +85,14 @@ const AddIngredient = async (parent, { ingredient_input }, ctx) => {
 
   // ingredient name is mandatory
   if (!ingredient_input.name) {
-    throw new Error('Ingredient must have a name');
+    throw new Error('Ingredient must has a name');
   } else {
-    // check existed active ingredient
+    // check existed active ingredient with same name
     const existedIngredient = await IngredientModel.findOne({
       name: ingredient_input.name,
       status: 'active',
     }).lean();
-    if (existedIngredient) throw new Error('Ingredient name already existed');
+    if (existedIngredient) throw new Error(`Ingredient's name already existed`);
   }
 
   // update ingredient availablity when stock amount more than 0

@@ -1,4 +1,6 @@
 const RecipeModel = require('./recipe.model');
+const UserModel = require('../users/user.model');
+const UserTypeModel = require('../userTypes/user_type.model');
 
 const _ = require('lodash');
 
@@ -79,9 +81,37 @@ const GetOneRecipe = async (parent, { _id }) => {
   return recipe;
 };
 
+// **** Mutation */
+const CreateRecipe = async (parent, { recipe_input }, ctx) => {
+  // check user permission
+  const userLogin = await UserModel.findById(ctx.userId)
+    .populate([{ path: 'user_type', select: 'name' }])
+    .lean();
+  if (userLogin && userLogin.user_type && userLogin.user_type.name !== 'General Admin' && userLogin.user_type.name !== 'Stock Admin')
+    throw new Error('Only General Admin or Stock Admin can add new recipe');
+
+  // recipe name is mandatory
+  if (!recipe_input.name) {
+    throw new Error('Recipe must has a name');
+  } else {
+    // check existed active recipe with same name
+    const existedRecipe = await RecipeModel.findOne({
+      status: 'active',
+      name: recipe_input.name,
+    }).lean();
+    if (existedRecipe) throw new Error(`Recipe's name already exists`);
+  }
+
+  const recipe = await RecipeModel.create(recipe_input);
+  return recipe;
+};
+
 module.exports = {
   Query: {
     GetAllRecipes,
     GetOneRecipe,
   },
+  Mutation: {
+    CreateRecipe
+  }
 };
