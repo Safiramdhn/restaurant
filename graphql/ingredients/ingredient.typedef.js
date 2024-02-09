@@ -27,14 +27,14 @@ const IngredientTypedefs = gql`
 		page: Int
 	}
 
-	enum Sorting {
+	enum SortingEnum {
 		asc
 		desc
 	}
 
 	input IngredientSortingInput {
-		name: Sorting
-		stock: Sorting
+		name: SortingEnum
+		stock: SortingEnum
 	}
 
     extend type Query {

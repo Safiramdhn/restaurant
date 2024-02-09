@@ -9,6 +9,7 @@ const RecipeSchema = new Schema(
     price: { type: Number, default: 0 },
     is_discount: { type: Boolean, default: false },
     discount: { type: Number, default: 0 },
+    is_best_seller: { type: Boolean, default: false },
     ingredient_details: [
       {
         ingredient: { type: Schema.ObjectId, ref: 'ingredients' },
