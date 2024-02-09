@@ -2,6 +2,7 @@ const { gql } = require('apollo-server-express');
 
 const RecipeTypedefs = gql`
   type Recipe {
+    _id: ID!
     name: String!
     available: Int
     is_published: Boolean

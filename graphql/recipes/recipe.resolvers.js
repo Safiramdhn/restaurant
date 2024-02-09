@@ -1,6 +1,7 @@
 const RecipeModel = require('./recipe.model');
 const UserModel = require('../users/user.model');
 const UserTypeModel = require('../userTypes/user_type.model');
+const IngredientModel = require('../ingredients/ingredient.model');
 
 const _ = require('lodash');
 
@@ -59,7 +60,7 @@ const GetAllRecipes = async (parent, { filter, sorting, pagination }) => {
         countData: [{ $group: { _id: null, count: { $sum: 1 } } }],
       },
     });
-    let recipes = await RecipeModel.aggregate(aggregateQuery).allowDiskUse(true).lean();
+    let recipes = await RecipeModel.aggregate(aggregateQuery).allowDiskUse(true);
     return recipes[0].data.map((recipe) => {
       return {
         ...recipe,
@@ -67,8 +68,8 @@ const GetAllRecipes = async (parent, { filter, sorting, pagination }) => {
       };
     });
   } else {
-    let recipes = await RecipeModel.aggregate(aggregateQuery).allowDiskUse(true).lean();
-    return recipes[0].data.map((recipe) => {
+    let recipes = await RecipeModel.aggregate(aggregateQuery).allowDiskUse(true);
+    return recipes.map((recipe) => {
       return {
         ...recipe,
       };
@@ -106,12 +107,36 @@ const CreateRecipe = async (parent, { recipe_input }, ctx) => {
   return recipe;
 };
 
+// loader
+const available = async (parent, args, ctx) => {
+  let result;
+  if (parent.ingredient_details.length) {
+    let minStock = [];
+    for (let recipeIngredient of parent.ingredient_details) {
+      const ingredient = await IngredientModel.findById(recipeIngredient.ingredient).lean();
+      minStock.push(Math.floor(ingredient.stock_amount / recipeIngredient.stock_used));
+    }
+    if (minStock.some((v) => v <= 0)) {
+      result = 0;
+      return 0;
+    } else {
+      result = Math.min(...minStock);
+    }
+  } else {
+    result = 0;
+  }
+  return result;
+};
+
 module.exports = {
   Query: {
     GetAllRecipes,
     GetOneRecipe,
   },
   Mutation: {
-    CreateRecipe
-  }
+    CreateRecipe,
+  },
+  Recipe: {
+    available,
+  },
 };
