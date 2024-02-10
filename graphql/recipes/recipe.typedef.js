@@ -37,6 +37,8 @@ const RecipeTypedefs = gql`
     name: String
     price: Int
     ingredient_details: [IngredientDetailInput]
+    is_discount: Boolean
+    discount: Int
   }
 
   input IngredientDetailInput {
@@ -51,6 +53,7 @@ const RecipeTypedefs = gql`
 
   extend type Mutation {
     CreateRecipe(recipe_input: RecipeInput): Recipe
+    UpdateRecipe(_id: ID!, recipe_input: RecipeInput, publish_status: Boolean): Recipe
   }
 `;
 

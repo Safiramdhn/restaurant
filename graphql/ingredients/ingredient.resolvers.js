@@ -123,7 +123,7 @@ const UpdateIngredient = async (parent, { _id, ingredient_input }, ctx) => {
         $ne: _id,
       },
     }).lean();
-    if (existedIngredient) throw new Error('Ingredient name already existed');
+    if (existedIngredient) throw new Error(`This ingredient's name already exists`);
   }
 
   // update ingredient availablity when stock amount more than 0

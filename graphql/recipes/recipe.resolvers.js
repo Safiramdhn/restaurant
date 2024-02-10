@@ -107,6 +107,49 @@ const CreateRecipe = async (parent, { recipe_input }, ctx) => {
   return recipe;
 };
 
+const UpdateRecipe = async (parent, { _id, recipe_input, publish_status }, ctx) => {
+  const oldRecipe = await RecipeModel.findById(_id);
+  if (oldRecipe) {
+    // check recipe publish status
+    if (oldRecipe.is_published) throw new Error('The recipe is already published');
+
+    const userLogin = await UserModel.findById(ctx.userId)
+      .populate([{ path: 'user_type', select: 'name' }])
+      .lean();
+    if (userLogin && userLogin.user_type && userLogin.user_type.name !== 'General Admin' && userLogin.user_type.name !== 'Stock Admin')
+      throw new Error('Only General Admin or Stock Admin can update recipe');
+
+    if (recipe_input) {
+      // check existed recipe with same name
+      if (recipe_input.name.toLowerCase() !== oldRecipe.name.toLowerCase()) {
+        const existedRecipe = await RecipeModel.findOne({
+          _id: {
+            $ne: _id,
+          },
+          name: recipe_input.name,
+          status: 'active',
+        }).lean();
+        if (existedRecipe) throw new Error(`This recipe's name already exists`);
+      }
+
+      // discount validation if any update on discount status
+      if (recipe_input.is_discount === true && recipe_input.discount <= 0) {
+        throw new Error('Discount value should be greater than zero');
+      } else if (recipe_input.is_discount === false) {
+        recipe_input.discount = 0;
+      }
+    }
+
+    //  set publish status
+    if (publish_status) {
+      recipe_input.is_published = publish_status;
+    }
+
+    const updatedRecipe = await RecipeModel.findByIdAndUpdate(_id, { $set: recipe_input }, { new: true });
+    return updatedRecipe;
+  }
+};
+
 // loader
 const available = async (parent, args, ctx) => {
   let result;
@@ -135,6 +178,7 @@ module.exports = {
   },
   Mutation: {
     CreateRecipe,
+    UpdateRecipe,
   },
   Recipe: {
     available,
