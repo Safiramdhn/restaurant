@@ -54,6 +54,7 @@ const RecipeTypedefs = gql`
   extend type Mutation {
     CreateRecipe(recipe_input: RecipeInput): Recipe
     UpdateRecipe(_id: ID!, recipe_input: RecipeInput, publish_status: Boolean): Recipe
+    DeleteRecipe(_id: ID!): String
   }
 `;
 

@@ -36,6 +36,7 @@ let authMiddleware = {
     DeleteIngredient: requireAuthJwt,
     CreateRecipe: requireAuthJwt,
     UpdateRecipe: requireAuthJwt,
+    DeleteRecipe: requireAuthJwt,
   },
 };
 
