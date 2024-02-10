@@ -16,7 +16,7 @@ const RecipeTypedefs = gql`
   }
 
   type IngredientDetail {
-    ingredient: ID
+    ingredient: Ingredient
     stock_used: Int
   }
 

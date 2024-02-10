@@ -110,7 +110,7 @@ const CreateRecipe = async (parent, { recipe_input }, ctx) => {
 const UpdateRecipe = async (parent, { _id, recipe_input, publish_status }, ctx) => {
   const oldRecipe = await RecipeModel.findById(_id);
   // check recipe publish status
-  if (oldRecipe && oldRecipe.is_published && [null,undefined].includes(publish_status)) throw new Error('The recipe is already published');
+  if (oldRecipe && oldRecipe.is_published && [null, undefined].includes(publish_status)) throw new Error('The recipe is already published');
 
   const userLogin = await UserModel.findById(ctx.userId)
     .populate([{ path: 'user_type', select: 'name' }])
@@ -141,10 +141,10 @@ const UpdateRecipe = async (parent, { _id, recipe_input, publish_status }, ctx) 
     await RecipeModel.findByIdAndUpdate(_id, { $set: recipe_input });
   }
   //  set publish status
-  if (![null,undefined].includes(publish_status) && publish_status !== oldRecipe.is_published) {
-    await RecipeModel.findByIdAndUpdate(_id, { $set: {is_published: publish_status} });
+  if (![null, undefined].includes(publish_status) && publish_status !== oldRecipe.is_published) {
+    await RecipeModel.findByIdAndUpdate(_id, { $set: { is_published: publish_status } });
   }
-  
+
   const updatedRecipe = await RecipeModel.findById(_id);
   return updatedRecipe;
 };
@@ -189,6 +189,13 @@ const available = async (parent, args, ctx) => {
   return result;
 };
 
+const ingredient = async (parent, args, ctx) => {
+  if (parent.ingredient) {
+    const result = await ctx.loaders.IngredientLoader.load(parent.ingredient);
+    return result;
+  }
+};
+
 module.exports = {
   Query: {
     GetAllRecipes,
@@ -201,5 +208,8 @@ module.exports = {
   },
   Recipe: {
     available,
+  },
+  IngredientDetail: {
+    ingredient,
   },
 };
