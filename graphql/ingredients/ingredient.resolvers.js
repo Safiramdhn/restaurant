@@ -1,6 +1,7 @@
 const IngredientModel = require('./ingredient.model');
 const UserModel = require('../users/user.model');
-const UserTypes = require('../userTypes/user_type.model');
+const UserTypesModel = require('../userTypes/user_type.model');
+const RecipeModel = require('../recipes/recipe.model');
 
 const moment = require('moment');
 const _ = require('lodash');
@@ -157,9 +158,19 @@ const DeleteIngredient = async (parent, { _id }, ctx) => {
   if (userLogin && userLogin.user_type && userLogin.user_type.name !== 'General Admin' && userLogin.user_type.name !== 'Stock Admin')
     throw new Error('Only General Admin or Stock Admin can add new ingredient');
 
+  const ingredient = await IngredientModel.findById(_id).lean();
   // if ingredient was used in published recipes then don't delete it
+  const checkInRecipes = await RecipeModel.find({
+    is_published: true,
+    ingredient_details: {
+      $elemMatch: {
+        ingredient: ingredient._id
+      }
+    }
+  }).lean();
+  if(checkInRecipes.length) throw new Error(`Ingredient ${ingredient.name} is used in published recipe`)
 
-  const ingredient = await IngredientModel.findByIdAndUpdate(_id, {
+  await IngredientModel.findByIdAndUpdate(_id, {
     $set: {
       status: 'deleted',
     },
