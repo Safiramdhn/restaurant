@@ -48,6 +48,7 @@ const TransactionTypedefs = gql`
 
   extend type Query {
     GetAllTransactions(filter: TransactionFilterInput, sorting: TransactionSorting, pagination: Pagination): [Transaction]
+    GetOneTransaction(_id: ID): Transaction
   }
 `;
 

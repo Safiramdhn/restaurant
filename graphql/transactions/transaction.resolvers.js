@@ -132,8 +132,14 @@ const GetAllTransactions = async (parent, { filter, sorting, pagination }) => {
   }
 };
 
+const GetOneTransaction = async(parent, {_id})=>{
+    const transaction = await TransactionModel.findById(_id);
+    return transaction
+}
+
 module.exports = {
   Query: {
     GetAllTransactions,
+    GetOneTransaction
   },
 };
