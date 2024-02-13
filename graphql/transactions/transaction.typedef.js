@@ -3,7 +3,6 @@ const { gql } = require('apollo-server-express');
 const TransactionTypedefs = gql`
   type Transaction {
     _id: ID!
-    transaction_time: TransactionTime
     menus: [TransactionMenu]
     total_price: Int
     status: StatusEnum
@@ -11,11 +10,7 @@ const TransactionTypedefs = gql`
     payment_method: String
     transaction_status: TransactionStatusEnum
     queue_number: Int
-  }
-
-  type TransactionTime {
-    date: String
-    time: String
+    count_document: Int
   }
 
   type TransactionMenu {
@@ -30,6 +25,29 @@ const TransactionTypedefs = gql`
     in_cart
     pending
     paid
+  }
+
+  input TransactionFilterInput {
+    transaction_date: TransactionDateEnum
+    cashier: String
+    payment_method: String
+    transaction_status: TransactionStatusEnum
+  }
+
+  input TransactionSorting {
+    transaction_date: SortingEnum
+    total_price: SortingEnum
+  }
+
+  enum TransactionDateEnum {
+    today
+    yesterday
+    last_week
+    last_month
+  }
+
+  extend type Query {
+    GetAllTransactions(filter: TransactionFilterInput, sorting: TransactionSorting, pagination: Pagination): [Transaction]
   }
 `;
 

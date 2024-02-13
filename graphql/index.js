@@ -14,7 +14,7 @@ const typedef = gql`
 const typeDefs = [typedef, UserTypes.typedef, User.typeDefs, Ingredient.typedefs, Recipe.typedefs, Transaction.typedefs];
 
 let resolvers = {};
-resolvers = merge(resolvers, UserTypes.resolvers, User.resolvers, Ingredient.resolvers, Recipe.resolvers);
+resolvers = merge(resolvers, UserTypes.resolvers, User.resolvers, Ingredient.resolvers, Recipe.resolvers, Transaction.resolvers);
 
 module.exports = {
   typeDefs,

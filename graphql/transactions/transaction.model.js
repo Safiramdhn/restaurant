@@ -3,10 +3,6 @@ const Schema = mongoose.Schema;
 
 const TransactionSchema = new Schema(
   {
-    transaction_date: {
-      date: { type: String },
-      time: { type: String },
-    },
     menus: [
       {
         recipe: { type: Schema.ObjectId, ref: 'recipe' },

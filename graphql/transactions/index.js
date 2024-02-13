@@ -1,7 +1,9 @@
 const TransactionModel = require('./transaction.model');
-const typedef = require('./transaction.typedef');
+const typedefs = require('./transaction.typedef');
+const resolvers = require('./transaction.resolvers');
 
 module.exports = {
   TransactionModel,
-  typedef,
+  typedefs,
+  resolvers
 };
