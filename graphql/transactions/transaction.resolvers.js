@@ -182,13 +182,15 @@ const CreateTransaction = async (parent, { transaction_input }, ctx) => {
   }
 };
 
-const UpdateTransaction = async (parent, {_id, transaction_input}, ctx) => {
-  const userLogin = await UserModel.findById(ctx.userId).populate([{path: 'user_type', select: 'name'}]).lean()
+const UpdateTransaction = async (parent, { _id, transaction_input }, ctx) => {
+  const userLogin = await UserModel.findById(ctx.userId)
+    .populate([{ path: 'user_type', select: 'name' }])
+    .lean();
   const oldTransaction = await TransactionModel.findById(_id).lean();
-  if(userLogin && oldTransaction) {
-
-    if(userLogin.user_type && userLogin.user_type.name === 'Restaurant Admin') {
+  if (userLogin && oldTransaction) {
+    if (userLogin.user_type && userLogin.user_type.name === 'Restaurant Admin') {
       // update transaction detail
+      transaction_input.total_price = oldTransaction.total_price;
       if (transaction_input.menus.length === oldTransaction.menus.length) {
         for (const menu of transaction_input.menus) {
           if (menu.update_amount) {
@@ -196,6 +198,8 @@ const UpdateTransaction = async (parent, {_id, transaction_input}, ctx) => {
               if (menu.amount !== oldMenu.amount) {
                 menu.amount = menu.amount - oldMenu.amount;
                 await IngredientUtils.checkIngredientStock(menu);
+                const recipe = await RecipeModel.findById(menu.recipe).lean();
+                transaction_input.total_price += (recipe.price - (recipe.price * recipe.discount ? recipe.discount / 100 : 0)) * menu.amount;
               }
             }
           }
@@ -205,6 +209,8 @@ const UpdateTransaction = async (parent, {_id, transaction_input}, ctx) => {
           for (const oldMenu of oldTransaction.menus) {
             if (menu._id.toString() !== oldMenu._id.toStirng()) {
               await IngredientUtils.checkIngredientStock(menu);
+              const recipe = await RecipeModel.findById(menu.recipe).lean();
+              transaction_input.total_price += (recipe.price - (recipe.price * recipe.discount ? recipe.discount / 100 : 0)) * menu.amount;
             }
           }
         }
@@ -215,6 +221,7 @@ const UpdateTransaction = async (parent, {_id, transaction_input}, ctx) => {
               if (menu._id.toString() !== oldMenu._id.toStirng()) {
                 const recipe = await RecipeModel.findById(oldMenu.recipe).lean();
                 await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, oldMenu.additional_ingredients, oldMenu.amount, true);
+                transaction_input.total_price -= (recipe.price - (recipe.price * recipe.discount ? recipe.discount / 100 : 0)) * oldMenu.amount;
               }
             }
           }
@@ -222,32 +229,34 @@ const UpdateTransaction = async (parent, {_id, transaction_input}, ctx) => {
           for (const oldMenu of oldTransaction.menus) {
             const recipe = await RecipeModel.findById(oldMenu.recipe).lean();
             await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, oldMenu.additional_ingredients, oldMenu.amount, true);
+            transaction_input.total_price -= (recipe.price - (recipe.price * recipe.discount ? recipe.discount / 100 : 0)) * oldMenu.amount;
           }
         }
       }
 
-      await TransactionModel.findByIdAndUpdate(_id, {$set: transaction_input})
-
-    } else if(userLogin.user_type && userLogin.user_type.name === 'Cashier') {
+      await TransactionModel.findByIdAndUpdate(_id, { $set: transaction_input });
+    } else if (userLogin.user_type && userLogin.user_type.name === 'Cashier') {
       // update transaction status and add payment method
-      await  TransactionModel.findByIdAndUpdate(_id, {
-        ...transaction_input,
-        cashier: userLogin._id
-      })
+      await TransactionModel.findByIdAndUpdate(_id, {
+        $set: {
+          ...transaction_input,
+          cashier: userLogin._id,
+        },
+      });
     } else {
-      throw new Error('Only Restaurant Admin and Cashier can update transaction')
+      throw new Error('Only Restaurant Admin and Cashier can update transaction');
     }
 
-    const transaction  = await TransactionModel.findById(_id).lean();
-    if(transaction.transaction_status === 'in_cart') {
-      return 'The cart is updated'
-    } else if(transaction.transaction_status === 'pending') {
-      return `Checkout is success, your queue number is ${transaction.queue_number}`
-    } else if(transaction.transaction_status === 'paid') {
-      return 'The transaction is successful'
+    const transaction = await TransactionModel.findById(_id).lean();
+    if (transaction.transaction_status === 'in_cart') {
+      return 'The cart is updated';
+    } else if (transaction.transaction_status === 'pending') {
+      return `Checkout is success, your queue number is ${transaction.queue_number}`;
+    } else if (transaction.transaction_status === 'paid') {
+      return 'The transaction is successful';
     }
   }
-}
+};
 
 module.exports = {
   Query: {
