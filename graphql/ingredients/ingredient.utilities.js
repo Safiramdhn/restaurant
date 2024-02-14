@@ -25,6 +25,18 @@ const checkIngredientStock = async (menu) => {
   }
 };
 
+const updateStockFromTransaction = async (ingredient_details, amount, is_removed) => {
+  for (const ingredientDetail of ingredient_details) {
+    let ingredient = await IngredientModel.findById(ingredientDetail.ingredient).lean();
+    if (ingredient) {
+      await IngredientModel.findByIdAndUpdate(ingredient._id, {
+        stock_amount: is_removed ? (ingredient.stock_amount += amount) : (ingredient.stock_amount -= amount),
+      });
+    }
+  }
+};
+
 module.exports = {
   checkIngredientStock,
+  updateStockFromTransaction,
 };
