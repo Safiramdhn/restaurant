@@ -46,7 +46,7 @@ const TransactionTypedefs = gql`
   }
 
   input TransactionInput {
-    menus: [TransactionMenuInput]
+    menus: [TransactionMenuInput]!
     payment_method: String
     transaction_status: TransactionStatusEnum
   }
@@ -56,7 +56,7 @@ const TransactionTypedefs = gql`
     amount: Int
     additional_ingredients: [ID]
     note: String
-    update_note_amount: Boolean
+    update_amount: Boolean
   }
 
   extend type Query {
@@ -66,6 +66,7 @@ const TransactionTypedefs = gql`
 
   extend type Mutation {
     CreateTransaction(transaction_input: TransactionInput): Transaction
+    UpdateTransaction(_id: ID!, transaction_input: TransactionInput): Transaction
   }
 `;
 

@@ -15,7 +15,7 @@ const TransactionSchema = new Schema(
     status: { type: String, enum: ['active', 'deleted'] },
     cashier: { type: Schema.ObjectId, ref: 'user' },
     payment_method: { type: String },
-    transaction_status: { type: String, enum: ['in_cart', 'pending', 'paid'] },
+    transaction_status: { type: String, enum: ['in_cart', 'pending', 'paid'], default: 'in_cart' },
     queue_number: { type: Number },
   },
   {
