@@ -2,6 +2,8 @@ const TransactionModel = require('./transaction.model');
 const UserModel = require('../users/user.model');
 const RecipeModel = require('../recipes/recipe.model');
 
+const IngredientUtils = require('../ingredients/ingredient.utilities');
+
 const moment = require('moment');
 const _ = require('lodash');
 
@@ -155,6 +157,7 @@ const CreateTransaction = async (parent, { transaction_input }, ctx) => {
         }
 
         //call function checkIngredientStock
+        await IngredientUtils.checkIngredientStock(menu)
 
         const recipe = await RecipeModel.findById(menu.recipe).lean();
         transaction_input.total_price += (recipe.price - (recipe.price * recipe.discount ? recipe.discount / 100 : 0)) * menu.amount;
