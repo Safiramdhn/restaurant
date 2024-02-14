@@ -14,13 +14,6 @@ const checkIngredientStock = async (menu) => {
           checkIngredientStock.push(ingredient.stock_amount - totalAmount);
         }
       }
-      if (checkIngredientStock.length) {
-        if (checkIngredientStock.some((v) => v <= 0)) {
-          throw new Error('Your request amount is more than available stock');
-        } else {
-          await updateStockFromTransaction(recipe.ingredient_details, totalAmount, false);
-        }
-      }
     }
 
     if(menu.additional_ingredients.length) {
@@ -44,7 +37,7 @@ const checkIngredientStock = async (menu) => {
 
 const updateStockFromTransaction = async (ingredient_details, additional_ingredients, amount, is_removed) => {
   for (const ingredientDetail of ingredient_details) {
-    let totalAmount = ingredientDetail.stock_used * menu.amount;
+    let totalAmount = ingredientDetail.stock_used * amount;
     let ingredient = await IngredientModel.findById(ingredientDetail.ingredient).lean();
     if (ingredient) {
       await IngredientModel.findByIdAndUpdate(ingredient._id, {
@@ -53,12 +46,14 @@ const updateStockFromTransaction = async (ingredient_details, additional_ingredi
     }
   }
 
-  for (const addtionalIngredientId of additional_ingredients) {
-    let additionalIngredient = await IngredientModel.findById(addtionalIngredientId).lean();
-    if (additionalIngredient) {
-      await IngredientModel.findByIdAndUpdate(additionalIngredient._id, {
-        stock_amount: is_removed ? (additionalIngredient.stock_amount += amount) : (additionalIngredient.stock_amount -= amount),
-      });
+  if (additional_ingredients && additional_ingredients.length) {
+    for (const addtionalIngredientId of additional_ingredients) {
+      let additionalIngredient = await IngredientModel.findById(addtionalIngredientId).lean();
+      if (additionalIngredient) {
+        await IngredientModel.findByIdAndUpdate(additionalIngredient._id, {
+          stock_amount: is_removed ? (additionalIngredient.stock_amount += amount) : (additionalIngredient.stock_amount -= amount),
+        });
+      }
     }
   }
 };

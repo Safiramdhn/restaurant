@@ -258,6 +258,25 @@ const UpdateTransaction = async (parent, { _id, transaction_input }, ctx) => {
   }
 };
 
+const DeleteTransaction = async(parent, {_id}, ctx) => {
+  const userLogin = await UserModel.findById(ctx.userId)
+    .populate([{ path: 'user_type', select: 'name' }])
+    .lean();
+
+  if(userLogin && userLogin.user_type && userLogin.user_type.name !== 'Restaurant Admin' && userLogin.user_type.name !== 'Cashier') throw new Error('Only Restaurant Admin or Cashier can delete transaction');
+  
+  const transaction = await TransactionModel.findById(_id);
+  if(transaction.menus.length) {
+    for(const menu of transaction.menus) {
+      const recipe = await RecipeModel.findById(menu.recipe).lean();
+      await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, menu.additional_ingredients, menu.amount, true)
+    }
+  }
+
+  await TransactionModel.findByIdAndUpdate(_id, {$set:{status: 'deleted'}});
+  return 'Transaction is deleted'
+}
+
 module.exports = {
   Query: {
     GetAllTransactions,
@@ -266,5 +285,6 @@ module.exports = {
   Mutation: {
     CreateTransaction,
     UpdateTransaction,
+    DeleteTransaction,
   },
 };

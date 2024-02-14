@@ -66,7 +66,8 @@ const TransactionTypedefs = gql`
 
   extend type Mutation {
     CreateTransaction(transaction_input: TransactionInput): Transaction
-    UpdateTransaction(_id: ID!, transaction_input: TransactionInput): Transaction
+    UpdateTransaction(_id: ID!, transaction_input: TransactionInput): String
+    DeleteTransaction(_id: ID!): String
   }
 `;
 

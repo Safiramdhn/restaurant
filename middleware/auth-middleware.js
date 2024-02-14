@@ -40,7 +40,8 @@ let authMiddleware = {
     UpdateRecipe: requireAuthJwt,
     DeleteRecipe: requireAuthJwt,
     CreateTransaction: requireAuthJwt,
-    UpdateTransaction: requireAuthJwt
+    UpdateTransaction: requireAuthJwt,
+    DeleteTransaction: requireAuthJwt,
   },
 };
 
