@@ -18,7 +18,6 @@ const TransactionTypedefs = gql`
     amount: Int
     additional_ingredients: [ID]
     note: String
-    total: Int
   }
 
   enum TransactionStatusEnum {
@@ -46,9 +45,27 @@ const TransactionTypedefs = gql`
     last_month
   }
 
+  input TransactionInput {
+    menus: [TransactionMenuInput]
+    payment_method: String
+    transaction_status: TransactionStatusEnum
+  }
+
+  input TransactionMenuInput {
+    recipe: ID
+    amount: Int
+    additional_ingredients: [ID]
+    note: String
+    update_note_amount: Boolean
+  }
+
   extend type Query {
     GetAllTransactions(filter: TransactionFilterInput, sorting: TransactionSorting, pagination: Pagination): [Transaction]
     GetOneTransaction(_id: ID): Transaction
+  }
+
+  extend type Mutation {
+    CreateTransaction(transaction_input: TransactionInput): Transaction
   }
 `;
 

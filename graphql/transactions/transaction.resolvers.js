@@ -1,8 +1,9 @@
 const TransactionModel = require('./transaction.model');
 const UserModel = require('../users/user.model');
+const RecipeModel = require('../recipes/recipe.model');
 
 const moment = require('moment');
-const _ = require('lodash')
+const _ = require('lodash');
 
 // Query
 const GetAllTransactions = async (parent, { filter, sorting, pagination }) => {
@@ -132,14 +133,58 @@ const GetAllTransactions = async (parent, { filter, sorting, pagination }) => {
   }
 };
 
-const GetOneTransaction = async(parent, {_id})=>{
-    const transaction = await TransactionModel.findById(_id);
-    return transaction
-}
+const GetOneTransaction = async (parent, { _id }) => {
+  const transaction = await TransactionModel.findById(_id);
+  return transaction;
+};
+
+//  Mutation
+const CreateTransaction = async (parent, { transaction_input }, ctx) => {
+  const userLogin = await UserModel.findById(ctx.userId)
+    .populate([{ path: 'user_type', select: 'name' }])
+    .lean();
+  if (userLogin && userLogin.user_type && userLogin.user_type.name !== 'Restaurant Admin')
+    throw new Error('Only Restaurant Admin can create transaction');
+
+  if (transaction_input) {
+    if (transaction_input.menus.length) {
+      transaction_input.total_price = 0;
+      for (let menu of transaction_input.menus) {
+        if (menu.amount < 1) {
+          throw new Error('Please fill amount of selected menu');
+        }
+
+        //call function checkIngredientStock
+
+        const recipe = await RecipeModel.findById(menu.recipe).lean();
+        transaction_input.total_price += (recipe.price - (recipe.price * recipe.discount ? recipe.discount / 100 : 0)) * menu.amount;
+      }
+    }
+
+    const todayTransaction = await TransactionModel.find({
+      createdAt: {
+        $gte: moment.utc().hour(0).minute(0).second(0),
+        $lte: moment.utc().hour(23).minute(59).second(59),
+      },
+    });
+
+    if (todayTransaction.length) {
+      transaction_input.queue_number = todayTransaction.length + 1;
+    } else {
+      transaction_input.queue_number = 1;
+    }
+
+    const transaction = await TransactionModel.create(transaction_input);
+    return transaction;
+  }
+};
 
 module.exports = {
   Query: {
     GetAllTransactions,
-    GetOneTransaction
+    GetOneTransaction,
+  },
+  Mutation: {
+    CreateTransaction,
   },
 };
