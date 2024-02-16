@@ -277,6 +277,28 @@ const DeleteTransaction = async(parent, {_id}, ctx) => {
   return 'Transaction is deleted'
 }
 
+// Loader
+const recipe = async(parent, args, ctx) => {
+  if(parent.recipe) {
+    const result = await ctx.loaders.RecipeLoader.load(parent.recipe);
+    return result
+  }
+}
+
+const additional_ingredients = async(parent, args, ctx) => {
+  if(parent.recipe) {
+    const result = await ctx.loaders.IngredientLoader.load(parent.additional_ingredients);
+    return result
+  }
+}
+
+const cashier = async(parent, args, ctx) => {
+  if(parent.cashier) {
+    const result = await ctx.loaders.UserLoader.load(parent.cashier);
+    return result
+  }
+}
+
 module.exports = {
   Query: {
     GetAllTransactions,
@@ -287,4 +309,11 @@ module.exports = {
     UpdateTransaction,
     DeleteTransaction,
   },
+  Transaction: {
+    cashier
+  },
+  TransactionMenu: {
+    recipe,
+    additional_ingredients
+  }
 };
