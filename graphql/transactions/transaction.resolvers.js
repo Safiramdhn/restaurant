@@ -142,6 +142,7 @@ const GetOneTransaction = async (parent, { _id }) => {
 
 //  Mutation
 const CreateTransaction = async (parent, { transaction_input }, ctx) => {
+  // check user permission
   const userLogin = await UserModel.findById(ctx.userId)
     .populate([{ path: 'user_type', select: 'name' }])
     .lean();
@@ -152,6 +153,7 @@ const CreateTransaction = async (parent, { transaction_input }, ctx) => {
     if (transaction_input.menus.length) {
       transaction_input.total_price = 0;
       for (let menu of transaction_input.menus) {
+        // check requested amount
         if (menu.amount < 1) {
           throw new Error('Please fill amount of selected menu');
         }
@@ -165,6 +167,7 @@ const CreateTransaction = async (parent, { transaction_input }, ctx) => {
       }
     }
 
+    // get queue number based on number of transactions today
     const todayTransaction = await TransactionModel.find({
       createdAt: {
         $gte: moment.utc().hour(0).minute(0).second(0),
@@ -184,11 +187,15 @@ const CreateTransaction = async (parent, { transaction_input }, ctx) => {
 };
 
 const UpdateTransaction = async (parent, { _id, transaction_input }, ctx) => {
+  // check user permission
   const userLogin = await UserModel.findById(ctx.userId)
     .populate([{ path: 'user_type', select: 'name' }])
     .lean();
+  // get existed transaction
   const oldTransaction = await TransactionModel.findById(_id).lean();
+
   if (userLogin && oldTransaction) {
+    // Restaurant Admin can update menu detail and update transaction status to "pending"
     if (userLogin.user_type && userLogin.user_type.name === 'Restaurant Admin') {
       if(transaction_input.transaction_status === 'paid') {
         throw new Error('Restaurant Admin cannot change transaction status to paid');
@@ -256,15 +263,17 @@ const UpdateTransaction = async (parent, { _id, transaction_input }, ctx) => {
       // update transaction detail
 
       await TransactionModel.findByIdAndUpdate(_id, { $set: transaction_input });
-    } else if (userLogin.user_type && userLogin.user_type.name === 'Cashier') {
+    } 
+    // Cashier can update payment method and update transaction status to "paid"
+    else if (userLogin.user_type && userLogin.user_type.name === 'Cashier') {
+      if([null, undefined, ''].includes(transaction_input.payment_method)) {
+        throw new Error('Please input the payment method');
+      }
+
       if(transaction_input.transaction_status !== 'paid') {
         throw new Error('Cashier only can change transaction status to paid');
       }
 
-      if([null, undefined, ''].includes(transaction_input.payment_method)) {
-        throw new Error('Please input the payment method');
-      }
-      // update transaction status and add payment method
       await TransactionModel.findByIdAndUpdate(_id, {
         $set: {
           ...transaction_input,
@@ -275,6 +284,7 @@ const UpdateTransaction = async (parent, { _id, transaction_input }, ctx) => {
       throw new Error('Only Restaurant Admin and Cashier can update transaction');
     }
 
+    //set return message
     const transaction = await TransactionModel.findById(_id).lean();
     if (transaction.transaction_status === 'in_cart') {
       return 'The cart is updated';
@@ -287,6 +297,7 @@ const UpdateTransaction = async (parent, { _id, transaction_input }, ctx) => {
 };
 
 const DeleteTransaction = async (parent, { _id }, ctx) => {
+  // check user permission
   const userLogin = await UserModel.findById(ctx.userId)
     .populate([{ path: 'user_type', select: 'name' }])
     .lean();
@@ -295,7 +306,8 @@ const DeleteTransaction = async (parent, { _id }, ctx) => {
     throw new Error('Only Restaurant Admin or Cashier can delete transaction');
 
   const transaction = await TransactionModel.findById(_id);
-  if (transaction.menus.length) {
+  // update ingredient stock if transaction status is not paid yet
+  if (transaction.transaction_status !== 'paid' && transaction.menus.length) {
     for (const menu of transaction.menus) {
       const recipe = await RecipeModel.findById(menu.recipe).lean();
       await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, menu.additional_ingredients, menu.amount, true);

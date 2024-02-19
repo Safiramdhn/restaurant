@@ -1,6 +1,11 @@
 const IngredientModel = require('./ingredient.model');
 const RecipeModel = require('../recipes/recipe.model');
 
+/**
+ * To validate ingredient stock is still available to add requested menu to transaction
+ *
+ * @param {array of object} menu contain recipe id and requested amount
+ */
 const checkIngredientStock = async (menu) => {
   let checkIngredientStock = [];
   
@@ -9,6 +14,7 @@ const checkIngredientStock = async (menu) => {
     if (recipe && recipe.ingredient_details.length) {
       for (const ingredientDetail of recipe.ingredient_details) {
         let ingredient = await IngredientModel.findById(ingredientDetail.ingredient);
+        //calculate the current ingredient stock with requested menu amount and used amount in recipe
         if (ingredient && ingredient.stock_amount) {
             let totalAmount = ingredientDetail.stock_used * menu.amount;
           checkIngredientStock.push(ingredient.stock_amount - totalAmount);
@@ -26,6 +32,7 @@ const checkIngredientStock = async (menu) => {
     }
 
     if (checkIngredientStock.length) {
+      // if the recipe ingredient 0 is less and equal than 0 must stop process
         if (checkIngredientStock.some((v) => v <= 0)) {
           throw new Error('Your request amount is more than available stock');
         } else {
@@ -35,6 +42,14 @@ const checkIngredientStock = async (menu) => {
   }
 };
 
+/**
+ * To update ingredient amount stock from transaction is increased or decreased
+ *
+ * @param {array of object} ingredient_details contain ingredient id and ingredient stock used amount
+ * @param {array of object} additional_ingredients contain additional ingredient ids
+ * @param {number} amount requested menu amount
+ * @param {boolean} is_removed decision param to increase or decrease ingredient stock amount
+ */
 const updateStockFromTransaction = async (ingredient_details, additional_ingredients, amount, is_removed) => {
   if(ingredient_details && ingredient_details.length) {
     for (const ingredientDetail of ingredient_details) {
