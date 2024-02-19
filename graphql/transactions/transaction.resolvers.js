@@ -157,10 +157,11 @@ const CreateTransaction = async (parent, { transaction_input }, ctx) => {
         }
 
         //call function checkIngredientStock
-        await IngredientUtils.checkIngredientStock(menu)
+        await IngredientUtils.checkIngredientStock(menu);
 
         const recipe = await RecipeModel.findById(menu.recipe).lean();
-        transaction_input.total_price += (recipe.price - (recipe.price * recipe.discount ? recipe.discount / 100 : 0)) * menu.amount;
+        const priceAfterDiscount = parseInt(recipe.is_discount ? recipe.price * (recipe.discount / 100) : 0);
+        transaction_input.total_price += parseInt((recipe.price - priceAfterDiscount) * menu.amount);
       }
     }
 
@@ -189,53 +190,80 @@ const UpdateTransaction = async (parent, { _id, transaction_input }, ctx) => {
   const oldTransaction = await TransactionModel.findById(_id).lean();
   if (userLogin && oldTransaction) {
     if (userLogin.user_type && userLogin.user_type.name === 'Restaurant Admin') {
-      // update transaction detail
-      transaction_input.total_price = oldTransaction.total_price;
-      if (transaction_input.menus.length === oldTransaction.menus.length) {
-        for (const menu of transaction_input.menus) {
-          if (menu.update_amount) {
-            for (const oldMenu of oldTransaction.menus) {
-              if (menu.amount !== oldMenu.amount) {
-                menu.amount = menu.amount - oldMenu.amount;
-                await IngredientUtils.checkIngredientStock(menu);
-                const recipe = await RecipeModel.findById(menu.recipe).lean();
-                transaction_input.total_price += (recipe.price - (recipe.price * recipe.discount ? recipe.discount / 100 : 0)) * menu.amount;
-              }
-            }
-          }
-        }
-      } else if (transaction_input.menu.length > oldTransaction.menus.length) {
-        for (const menu of transaction_input.menus) {
-          for (const oldMenu of oldTransaction.menus) {
-            if (menu._id.toString() !== oldMenu._id.toStirng()) {
-              await IngredientUtils.checkIngredientStock(menu);
-              const recipe = await RecipeModel.findById(menu.recipe).lean();
-              transaction_input.total_price += (recipe.price - (recipe.price * recipe.discount ? recipe.discount / 100 : 0)) * menu.amount;
-            }
-          }
-        }
-      } else if (transaction_input.menu.length < oldTransaction.menus.length) {
-        if (transaction_input.menu.length) {
+      if(transaction_input.transaction_status === 'paid') {
+        throw new Error('Restaurant Admin cannot change transaction status to paid');
+      }
+      if(transaction_input.menus) {
+        transaction_input.total_price = parseInt(oldTransaction.total_price);
+        if (transaction_input.menus.length === oldTransaction.menus.length) {
           for (const menu of transaction_input.menus) {
             for (const oldMenu of oldTransaction.menus) {
-              if (menu._id.toString() !== oldMenu._id.toStirng()) {
-                const recipe = await RecipeModel.findById(oldMenu.recipe).lean();
-                await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, oldMenu.additional_ingredients, oldMenu.amount, true);
-                transaction_input.total_price -= (recipe.price - (recipe.price * recipe.discount ? recipe.discount / 100 : 0)) * oldMenu.amount;
+              if (menu.update_amount && menu.amount !== oldMenu.amount) {
+                let copyMenu = _.cloneDeep(menu);
+  
+                if (copyMenu.amount > oldMenu.amount) {
+                  copyMenu.amount = copyMenu.amount - oldMenu.amount;
+                  await IngredientUtils.checkIngredientStock(copyMenu);
+  
+                  const recipe = await RecipeModel.findById(copyMenu.recipe).lean();
+                  const priceAfterDiscount = parseInt(recipe.is_discount ? recipe.price * (recipe.discount / 100) : 0);
+                  transaction_input.total_price += parseInt((recipe.price - priceAfterDiscount) * copyMenu.amount);
+                } else if (copyMenu.amount < oldMenu.amount) {
+                  copyMenu.amount = oldMenu.amount - copyMenu.amount;
+                  const recipe = await RecipeModel.findById(copyMenu.recipe).lean();
+                  await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, copyMenu.additional_ingredients, copyMenu.amount, true);
+  
+                  const priceAfterDiscount = parseInt(recipe.is_discount ? recipe.price * (recipe.discount / 100) : 0);
+                  transaction_input.total_price -= parseInt((recipe.price - priceAfterDiscount) * copyMenu.amount);
+                }
+              } else {
+                menu.amount = oldMenu.amount;
               }
             }
           }
-        } else {
-          for (const oldMenu of oldTransaction.menus) {
-            const recipe = await RecipeModel.findById(oldMenu.recipe).lean();
-            await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, oldMenu.additional_ingredients, oldMenu.amount, true);
-            transaction_input.total_price -= (recipe.price - (recipe.price * recipe.discount ? recipe.discount / 100 : 0)) * oldMenu.amount;
+        } else if (transaction_input.menus.length > oldTransaction.menus.length) {
+          for (const menu of transaction_input.menus) {
+            if(!menu._id) {
+              await IngredientUtils.checkIngredientStock(menu);
+              const recipe = await RecipeModel.findById(menu.recipe).lean();
+              const priceAfterDiscount = parseInt(recipe.is_discount ? recipe.price * (recipe.discount / 100) : 0);
+              transaction_input.total_price += parseInt((recipe.price - priceAfterDiscount) * menu.amount);
+            }
+          }
+        } else if (transaction_input.menus.length < oldTransaction.menus.length) {
+          if (transaction_input.menus.length) {
+            for (const menu of transaction_input.menus) {
+              for (const oldMenu of oldTransaction.menus) {
+                console.log(menu._id)
+                if (oldMenu._id.toString() !== menu._id.toString()) {
+                  const recipe = await RecipeModel.findById(oldMenu.recipe).lean();
+                  await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, oldMenu.additional_ingredients, oldMenu.amount, true);
+                  const priceAfterDiscount = parseInt(recipe.is_discount ? recipe.price * (recipe.discount / 100) : 0);
+                  transaction_input.total_price -= parseInt((recipe.price - priceAfterDiscount) * oldMenu.amount);
+                }
+              }
+            }
+          } else {
+            for (const oldMenu of oldTransaction.menus) {
+              const recipe = await RecipeModel.findById(oldMenu.recipe).lean();
+              await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, oldMenu.additional_ingredients, oldMenu.amount, true);
+              const priceAfterDiscount = parseInt(recipe.is_discount ? recipe.price * (recipe.discount / 100) : 0);
+              transaction_input.total_price -= parseInt((recipe.price - priceAfterDiscount) * oldMenu.amount);
+            }
           }
         }
       }
+      // update transaction detail
 
       await TransactionModel.findByIdAndUpdate(_id, { $set: transaction_input });
     } else if (userLogin.user_type && userLogin.user_type.name === 'Cashier') {
+      if(transaction_input.transaction_status !== 'paid') {
+        throw new Error('Cashier only can change transaction status to paid');
+      }
+
+      if([null, undefined, ''].includes(transaction_input.payment_method)) {
+        throw new Error('Please input the payment method');
+      }
       // update transaction status and add payment method
       await TransactionModel.findByIdAndUpdate(_id, {
         $set: {
@@ -258,46 +286,47 @@ const UpdateTransaction = async (parent, { _id, transaction_input }, ctx) => {
   }
 };
 
-const DeleteTransaction = async(parent, {_id}, ctx) => {
+const DeleteTransaction = async (parent, { _id }, ctx) => {
   const userLogin = await UserModel.findById(ctx.userId)
     .populate([{ path: 'user_type', select: 'name' }])
     .lean();
 
-  if(userLogin && userLogin.user_type && userLogin.user_type.name !== 'Restaurant Admin' && userLogin.user_type.name !== 'Cashier') throw new Error('Only Restaurant Admin or Cashier can delete transaction');
-  
+  if (userLogin && userLogin.user_type && userLogin.user_type.name !== 'Restaurant Admin' && userLogin.user_type.name !== 'Cashier')
+    throw new Error('Only Restaurant Admin or Cashier can delete transaction');
+
   const transaction = await TransactionModel.findById(_id);
-  if(transaction.menus.length) {
-    for(const menu of transaction.menus) {
+  if (transaction.menus.length) {
+    for (const menu of transaction.menus) {
       const recipe = await RecipeModel.findById(menu.recipe).lean();
-      await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, menu.additional_ingredients, menu.amount, true)
+      await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, menu.additional_ingredients, menu.amount, true);
     }
   }
 
-  await TransactionModel.findByIdAndUpdate(_id, {$set:{status: 'deleted'}});
-  return 'Transaction is deleted'
-}
+  await TransactionModel.findByIdAndUpdate(_id, { $set: { status: 'deleted' } });
+  return 'Transaction is deleted';
+};
 
 // Loader
-const recipe = async(parent, args, ctx) => {
-  if(parent.recipe) {
+const recipe = async (parent, args, ctx) => {
+  if (parent.recipe) {
     const result = await ctx.loaders.RecipeLoader.load(parent.recipe);
-    return result
+    return result;
   }
-}
+};
 
-const additional_ingredients = async(parent, args, ctx) => {
-  if(parent.recipe) {
+const additional_ingredients = async (parent, args, ctx) => {
+  if (parent.recipe) {
     const result = await ctx.loaders.IngredientLoader.load(parent.additional_ingredients);
-    return result
+    return result;
   }
-}
+};
 
-const cashier = async(parent, args, ctx) => {
-  if(parent.cashier) {
+const cashier = async (parent, args, ctx) => {
+  if (parent.cashier) {
     const result = await ctx.loaders.UserLoader.load(parent.cashier);
-    return result
+    return result;
   }
-}
+};
 
 module.exports = {
   Query: {
@@ -310,10 +339,11 @@ module.exports = {
     DeleteTransaction,
   },
   Transaction: {
-    cashier
+    cashier,
   },
   TransactionMenu: {
     recipe,
-    additional_ingredients
-  }
+    additional_ingredients,
+  },
 };
+

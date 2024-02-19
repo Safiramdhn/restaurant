@@ -5,7 +5,7 @@ const checkIngredientStock = async (menu) => {
   let checkIngredientStock = [];
   
   if (menu) {
-    const recipe = await RecipeModel.findById(recipe).lean();
+    const recipe = await RecipeModel.findById(menu.recipe).lean();
     if (recipe && recipe.ingredient_details.length) {
       for (const ingredientDetail of recipe.ingredient_details) {
         let ingredient = await IngredientModel.findById(ingredientDetail.ingredient);
@@ -16,7 +16,7 @@ const checkIngredientStock = async (menu) => {
       }
     }
 
-    if(menu.additional_ingredients.length) {
+    if(menu.additional_ingredients && menu.additional_ingredients.length) {
         for (const addtionalIngredientId of menu.additional_ingredients) {
             const additionalIngredient = await IngredientModel.findById(addtionalIngredientId);
             if (additionalIngredient && additionalIngredient.stock_amount) {
@@ -36,13 +36,15 @@ const checkIngredientStock = async (menu) => {
 };
 
 const updateStockFromTransaction = async (ingredient_details, additional_ingredients, amount, is_removed) => {
-  for (const ingredientDetail of ingredient_details) {
-    let totalAmount = ingredientDetail.stock_used * amount;
-    let ingredient = await IngredientModel.findById(ingredientDetail.ingredient).lean();
-    if (ingredient) {
-      await IngredientModel.findByIdAndUpdate(ingredient._id, {
-        stock_amount: is_removed ? (ingredient.stock_amount += totalAmount) : (ingredient.stock_amount -= totalAmount),
-      });
+  if(ingredient_details && ingredient_details.length) {
+    for (const ingredientDetail of ingredient_details) {
+      let totalAmount = ingredientDetail.stock_used * amount;
+      let ingredient = await IngredientModel.findById(ingredientDetail.ingredient).lean();
+      if (ingredient) {
+        await IngredientModel.findByIdAndUpdate(ingredient._id, {
+          stock_amount: is_removed ? (ingredient.stock_amount += totalAmount) : (ingredient.stock_amount -= totalAmount),
+        });
+      }
     }
   }
 

@@ -64,6 +64,7 @@ const GetAllRecipes = async (parent, { filter, sorting, pagination }) => {
     return recipes[0].data.map((recipe) => {
       return {
         ...recipe,
+        price:  recipe.is_discount ? recipe.price - (recipe.price * recipe.discount/100)  : recipe.price,
         count_document: recipes[0].countData[0].count,
       };
     });
@@ -72,6 +73,7 @@ const GetAllRecipes = async (parent, { filter, sorting, pagination }) => {
     return recipes.map((recipe) => {
       return {
         ...recipe,
+        price:  recipe.is_discount ? recipe.price - (recipe.price * recipe.discount/100)  : recipe.price,
       };
     });
   }
@@ -120,7 +122,7 @@ const UpdateRecipe = async (parent, { _id, recipe_input, publish_status }, ctx) 
 
   if (recipe_input) {
     // check existed recipe with same name
-    if (oldRecipe && [null, undefined, ''].includes(recipe_input.name) && recipe_input.name.toLowerCase() !== oldRecipe.name.toLowerCase()) {
+    if (recipe_input.name && oldRecipe && [null, undefined, ''].includes(recipe_input.name) && recipe_input.name.toLowerCase() !== oldRecipe.name.toLowerCase()) {
       const existedRecipe = await RecipeModel.findOne({
         _id: {
           $ne: _id,
@@ -132,7 +134,7 @@ const UpdateRecipe = async (parent, { _id, recipe_input, publish_status }, ctx) 
     }
 
     // discount validation if any update on discount status
-    if (recipe_input.is_discount === true && recipe_input.discount <= 0) {
+    if (recipe_input.is_discount === true && (!recipe_input.discount || recipe_input.discount <= 0)) {
       throw new Error('Discount value should be greater than zero');
     } else if (recipe_input.is_discount === false) {
       recipe_input.discount = 0;

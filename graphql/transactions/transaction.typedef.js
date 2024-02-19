@@ -6,7 +6,7 @@ const TransactionTypedefs = gql`
     menus: [TransactionMenu]
     total_price: Int
     status: StatusEnum
-    cashier: ID
+    cashier: User
     payment_method: String
     transaction_status: TransactionStatusEnum
     queue_number: Int
@@ -14,9 +14,10 @@ const TransactionTypedefs = gql`
   }
 
   type TransactionMenu {
-    recipe: ID
+    _id: ID
+    recipe: Recipe
     amount: Int
-    additional_ingredients: [ID]
+    additional_ingredients: [Ingredient]
     note: String
   }
 
@@ -50,8 +51,9 @@ const TransactionTypedefs = gql`
     payment_method: String
     transaction_status: TransactionStatusEnum
   }
-
+  
   input TransactionMenuInput {
+    _id: ID
     recipe: ID
     amount: Int
     additional_ingredients: [ID]
