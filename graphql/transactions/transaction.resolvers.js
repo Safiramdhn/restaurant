@@ -218,7 +218,7 @@ const UpdateTransaction = async (parent, { _id, transaction_input }, ctx) => {
                 } else if (copyMenu.amount < oldMenu.amount) {
                   copyMenu.amount = oldMenu.amount - copyMenu.amount;
                   const recipe = await RecipeModel.findById(copyMenu.recipe).lean();
-                  await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, copyMenu.additional_ingredients, copyMenu.amount, true);
+                  await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, copyMenu.amount, true);
   
                   const priceAfterDiscount = parseInt(recipe.is_discount ? recipe.price * (recipe.discount / 100) : 0);
                   transaction_input.total_price -= parseInt((recipe.price - priceAfterDiscount) * copyMenu.amount);
@@ -244,7 +244,7 @@ const UpdateTransaction = async (parent, { _id, transaction_input }, ctx) => {
                 console.log(menu._id)
                 if (oldMenu._id.toString() !== menu._id.toString()) {
                   const recipe = await RecipeModel.findById(oldMenu.recipe).lean();
-                  await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, oldMenu.additional_ingredients, oldMenu.amount, true);
+                  await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, oldMenu.amount, true);
                   const priceAfterDiscount = parseInt(recipe.is_discount ? recipe.price * (recipe.discount / 100) : 0);
                   transaction_input.total_price -= parseInt((recipe.price - priceAfterDiscount) * oldMenu.amount);
                 }
@@ -253,7 +253,7 @@ const UpdateTransaction = async (parent, { _id, transaction_input }, ctx) => {
           } else {
             for (const oldMenu of oldTransaction.menus) {
               const recipe = await RecipeModel.findById(oldMenu.recipe).lean();
-              await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, oldMenu.additional_ingredients, oldMenu.amount, true);
+              await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, oldMenu.amount, true);
               const priceAfterDiscount = parseInt(recipe.is_discount ? recipe.price * (recipe.discount / 100) : 0);
               transaction_input.total_price -= parseInt((recipe.price - priceAfterDiscount) * oldMenu.amount);
             }
@@ -310,7 +310,7 @@ const DeleteTransaction = async (parent, { _id }, ctx) => {
   if (transaction.transaction_status !== 'paid' && transaction.menus.length) {
     for (const menu of transaction.menus) {
       const recipe = await RecipeModel.findById(menu.recipe).lean();
-      await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, menu.additional_ingredients, menu.amount, true);
+      await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, menu.amount, true);
     }
   }
 
@@ -322,13 +322,6 @@ const DeleteTransaction = async (parent, { _id }, ctx) => {
 const recipe = async (parent, args, ctx) => {
   if (parent.recipe) {
     const result = await ctx.loaders.RecipeLoader.load(parent.recipe);
-    return result;
-  }
-};
-
-const additional_ingredients = async (parent, args, ctx) => {
-  if (parent.recipe) {
-    const result = await ctx.loaders.IngredientLoader.load(parent.additional_ingredients);
     return result;
   }
 };
@@ -355,7 +348,6 @@ module.exports = {
   },
   TransactionMenu: {
     recipe,
-    additional_ingredients,
   },
 };
 

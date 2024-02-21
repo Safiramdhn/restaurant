@@ -17,7 +17,6 @@ const TransactionTypedefs = gql`
     _id: ID
     recipe: Recipe
     amount: Int
-    additional_ingredients: [Ingredient]
     note: String
   }
 
@@ -56,7 +55,6 @@ const TransactionTypedefs = gql`
     _id: ID
     recipe: ID
     amount: Int
-    additional_ingredients: [ID]
     note: String
     update_amount: Boolean
   }

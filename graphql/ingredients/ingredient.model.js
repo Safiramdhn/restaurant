@@ -7,7 +7,6 @@ const IngredientSchema = new Schema(
     stock_amount: { type: Number, default: 0 },
     is_available: { type: Boolean, default: false },
     status: { type: String, enum: ['active', 'deleted'], default: 'active' },
-    is_additional_ingredient: { type: Boolean, default: false },
     update_histories: [
       {
         _id: false,

@@ -7,7 +7,6 @@ const TransactionSchema = new Schema(
       {
         recipe: { type: Schema.ObjectId, ref: 'recipe' },
         amount: { type: Number },
-        additional_ingredients: [{ type: Schema.ObjectId, ref: 'ingredient', default: [] }],
         note: { type: String, default: '-' },
       },
     ],

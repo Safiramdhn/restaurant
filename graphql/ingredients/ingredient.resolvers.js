@@ -24,10 +24,6 @@ const GetAllIngredients = async (parent, { filter, pagination, sorting }) => {
     if (filter.is_available) {
       queryFilter.$and.push({ is_available: filter.is_available.toLowerCase() === 'yes' ? true : false });
     }
-
-    if (filter.is_additional_ingredient) {
-      queryFilter.$and.push({ is_additional_ingredient: filter.is_additional_ingredient.toLowerCase() === 'yes' ? true : false });
-    }
   }
 
   // ****  Sort the data

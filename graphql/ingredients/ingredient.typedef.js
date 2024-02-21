@@ -6,20 +6,17 @@ const IngredientTypedefs = gql`
 		name: String
 		stock_amount: Int
 		is_available: Boolean
-		is_additional_ingredient: Boolean
 		count_document: Int
 	}
 
 	input IngredientInput {
 		name: String
 		stock_amount: Int
-		is_additional_ingredient: Boolean
 	}
 
 	input IngredientFilterInput {
 		name: String
 		is_available: String
-		is_additional_ingredient: String
 	}
 
 	input Pagination {
