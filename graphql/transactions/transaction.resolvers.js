@@ -197,21 +197,21 @@ const UpdateTransaction = async (parent, { _id, transaction_input }, ctx) => {
   if (userLogin && oldTransaction) {
     // Restaurant Admin can update menu detail and update transaction status to "pending"
     if (userLogin.user_type && userLogin.user_type.name === 'Restaurant Admin') {
-      if(transaction_input.transaction_status === 'paid') {
+      if (transaction_input.transaction_status === 'paid') {
         throw new Error('Restaurant Admin cannot change transaction status to paid');
       }
-      if(transaction_input.menus) {
+      if (transaction_input.menus) {
         transaction_input.total_price = parseInt(oldTransaction.total_price);
         if (transaction_input.menus.length === oldTransaction.menus.length) {
           for (const menu of transaction_input.menus) {
             for (const oldMenu of oldTransaction.menus) {
-              if (menu.update_amount && menu.amount !== oldMenu.amount) {
+              if (String(menu._id) === String(oldMenu._id) && menu.amount !== oldMenu.amount) {
                 let copyMenu = _.cloneDeep(menu);
-  
+
                 if (copyMenu.amount > oldMenu.amount) {
                   copyMenu.amount = copyMenu.amount - oldMenu.amount;
                   await IngredientUtils.checkIngredientStock(copyMenu);
-  
+
                   const recipe = await RecipeModel.findById(copyMenu.recipe).lean();
                   const priceAfterDiscount = parseInt(recipe.is_discount ? recipe.price * (recipe.discount / 100) : 0);
                   transaction_input.total_price += parseInt((recipe.price - priceAfterDiscount) * copyMenu.amount);
@@ -219,18 +219,18 @@ const UpdateTransaction = async (parent, { _id, transaction_input }, ctx) => {
                   copyMenu.amount = oldMenu.amount - copyMenu.amount;
                   const recipe = await RecipeModel.findById(copyMenu.recipe).lean();
                   await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, copyMenu.amount, true);
-  
+
                   const priceAfterDiscount = parseInt(recipe.is_discount ? recipe.price * (recipe.discount / 100) : 0);
                   transaction_input.total_price -= parseInt((recipe.price - priceAfterDiscount) * copyMenu.amount);
                 }
               } else {
-                menu.amount = oldMenu.amount;
+                continue;
               }
             }
           }
         } else if (transaction_input.menus.length > oldTransaction.menus.length) {
           for (const menu of transaction_input.menus) {
-            if(!menu._id) {
+            if (!menu._id) {
               await IngredientUtils.checkIngredientStock(menu);
               const recipe = await RecipeModel.findById(menu.recipe).lean();
               const priceAfterDiscount = parseInt(recipe.is_discount ? recipe.price * (recipe.discount / 100) : 0);
@@ -241,7 +241,6 @@ const UpdateTransaction = async (parent, { _id, transaction_input }, ctx) => {
           if (transaction_input.menus.length) {
             for (const menu of transaction_input.menus) {
               for (const oldMenu of oldTransaction.menus) {
-                console.log(menu._id)
                 if (oldMenu._id.toString() !== menu._id.toString()) {
                   const recipe = await RecipeModel.findById(oldMenu.recipe).lean();
                   await IngredientUtils.updateStockFromTransaction(recipe.ingredient_details, oldMenu.amount, true);
@@ -263,14 +262,14 @@ const UpdateTransaction = async (parent, { _id, transaction_input }, ctx) => {
       // update transaction detail
 
       await TransactionModel.findByIdAndUpdate(_id, { $set: transaction_input });
-    } 
+    }
     // Cashier can update payment method and update transaction status to "paid"
     else if (userLogin.user_type && userLogin.user_type.name === 'Cashier') {
-      if([null, undefined, ''].includes(transaction_input.payment_method)) {
+      if ([null, undefined, ''].includes(transaction_input.payment_method)) {
         throw new Error('Please input the payment method');
       }
 
-      if(transaction_input.transaction_status !== 'paid') {
+      if (transaction_input.transaction_status !== 'paid') {
         throw new Error('Cashier only can change transaction status to paid');
       }
 
@@ -350,4 +349,3 @@ module.exports = {
     recipe,
   },
 };
-
