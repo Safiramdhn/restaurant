@@ -124,7 +124,7 @@ const UpdateIngredient = async (parent, { _id, ingredient_input }, ctx) => {
   }
 
   // update ingredient availablity when stock amount more than 0
-  if (ingredient_input.stock_amount && !oldIngredientData.is_available) {
+  if (ingredient_input.stock_amount > 0 && !oldIngredientData.is_available) {
     ingredient_input.is_available = true;
   } else if (ingredient_input.stock_amount === 0 &&  oldIngredientData.is_available) {
     ingredient_input.is_available = false;
