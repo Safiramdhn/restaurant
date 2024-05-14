@@ -27,8 +27,20 @@ const UserTypedefs = gql`
     token: String!
   }
 
+  input UserFilter {
+    full_name: String
+    user_type: ID
+    username: String
+  }
+
+  input UserSorting {
+    full_name: Sorting
+    user_type: Sorting
+    username: Sorting
+  }
+
   extend type Query {
-    GetAllUsers: [User]
+    GetAllUsers(filter: UserFilter, sorting: UserSorting, pagination: Pagination): [User]
     GetOneUser(_id: ID!): User
   }
 
