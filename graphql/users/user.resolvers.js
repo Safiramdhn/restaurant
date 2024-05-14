@@ -92,7 +92,7 @@ const DeleteUser = async (parent, { _id }) => {
 };
 
 //**** Loader */
-const user_type = async (parent, agrs, context) => {
+const user_type = async (parent, args, context) => {
   if (parent.user_type) {
     const result = await context.loaders.UserTypeLoader.load(parent.user_type);
     return result;
