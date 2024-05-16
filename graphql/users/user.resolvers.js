@@ -3,6 +3,8 @@ const UserTypeModel = require('../userTypes/user_type.model');
 
 const { getToken, encrypt, decrypt } = require('../../utils/common');
 
+const _ = require('lodash');
+
 //**** Query */
 const GetAllUsers = async (parent, { filter, sorting, pagination }) => {
   let aggregateQuery = [];
