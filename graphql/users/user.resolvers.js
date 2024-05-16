@@ -4,9 +4,95 @@ const UserTypeModel = require('../userTypes/user_type.model');
 const { getToken, encrypt, decrypt } = require('../../utils/common');
 
 //**** Query */
-const GetAllUsers = async (parent) => {
-  const users = await UserModel.find({ status: 'active' }).lean();
-  return users;
+const GetAllUsers = async (parent, { filter, sorting, pagination }) => {
+  let aggregateQuery = [];
+  let queryFilter = {
+    $and: [{ status: 'active' }],
+  };
+  let sort = {};
+
+  if (filter.full_name || sorting.full_name) {
+    aggregateQuery.push({
+      $addField: {
+        fullname: {
+          $concat: ['$first_name', ' ', '$last_name'],
+        },
+      },
+    });
+  }
+
+  if (filter) {
+    if (filter.full_name) {
+      queryFilter.$and.push({ fullname: { $regex: filter.full_name, $options: 'i' } });
+    }
+
+    if (filter.user_type) {
+      queryFilter.$and.push({ user_type: filter.user_type });
+    }
+
+    if (filter.username) {
+      queryFilter.$and.push({ username: { $regex: filter.username, $options: 'i' } });
+    }
+  }
+
+  if (sorting) {
+    if (sorting.full_name) {
+      sort = { ...sort, fullname: sorting.full_name === 'asc' ? 1 : -1 };
+    } else if (sorting.user_type) {
+      aggregateQuery.push(
+        {
+          $lookup: {
+            from: 'user_types',
+            localField: 'user_type',
+            foreignField: '_id',
+            as: 'user_type_populate',
+          },
+        },
+        {
+          $addField: {
+            user_type_populate: { $arrayElemAt: ['$user_type_populate', 0] },
+          },
+        }
+      );
+
+      sort = { ...sort, 'user_type_populate.name': sorting.user_type === 'asc' ? 1 : -1 };
+    } else if (sorting.username) {
+      sort = { ...sort, username: sorting.username === 'asc' ? 1 : -1 };
+    }
+
+    aggregateQuery.push(
+      {
+        $match: queryFilter,
+      },
+      {
+        $sort: sort && !_.isEmpty(sort) ? sort : { createAt: -1 },
+      }
+    );
+
+    // use $facet if use pagination
+    if (pagination) {
+      aggregateQuery.push({
+        $facet: {
+          data: [{ $skip: pagination.limit * pagination.page }, { $limit: pagination.limit }],
+          countData: [{ $group: { _id: null, count: { $sum: 1 } } }],
+        },
+      });
+      let users = await UserModel.aggregate(aggregateQuery);
+      return users[0].data.map((user) => {
+        return {
+          ...user,
+          count_document: users[0].countData[0].count,
+        };
+      });
+    } else {
+      let users = await UserModel.aggregate(aggregateQuery);
+      return users.map((user) => {
+        return {
+          ...user,
+        };
+      });
+    }
+  }
 };
 
 const GetOneUser = async (parent, { _id }) => {
