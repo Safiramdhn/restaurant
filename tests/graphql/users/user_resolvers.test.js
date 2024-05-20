@@ -8,11 +8,13 @@ const UserModel = require('../../../graphql/users/user.model');
 const UserTypeModel = require('../../../graphql/userTypes/user_type.model');
 const { Mutation } = require('../../../graphql/users/user.resolvers');
 const UserTestData = require('./user_test_data');
+const { encrypt, decrypt, getToken } = require('../../../utils/common');
+
 
 jest.mock('../../../utils/common', () => ({
-  getToken: jest.fn(() => {}),
-  encrypt: jest.fn(() => {}),
-  decrypt: jest.fn(() => {}),
+  getToken: jest.fn(),
+  encrypt: jest.fn(),
+  decrypt: jest.fn(),
 }));
 
 // MUTATION
@@ -63,9 +65,10 @@ describe('CreateUser function', () => {
         lean: jest.fn().mockResolvedValue(null)
       }
     });
-
     // find user type once
     mockUserTypeModelFindOne.mockImplementationOnce();
+    encrypt.mockReturnValue(userInput.password);
+
     // user model create return user object
     mockUserModelCreate.mockResolvedValue({
       ...userInput,
@@ -77,6 +80,8 @@ describe('CreateUser function', () => {
 
     // declare expectation
     expect(mockUserModelFindOne).toHaveBeenCalledTimes(1);
+    expect(encrypt).toHaveBeenCalledTimes(1);
+    expect(encrypt).toHaveBeenCalledWith(userInput.password, 10);
     expect(mockUserTypeModelFindOne).toHaveBeenCalledTimes(1);
     expect(mockUserModelCreate).toHaveBeenCalledTimes(1);
 
@@ -99,7 +104,7 @@ describe('CreateUser function', () => {
 
   it('Should throw error for existed username', async () => {
     // user model find one return user object because existed user
-    mockUserModelFindOne = jest.spyOn(UserModel, 'findOne').mockImplementation(() => {
+    mockUserModelFindOne.mockImplementation(() => {
       return {
         lean: jest.fn().mockReturnValue(UserTestData.userData),
       };
@@ -133,5 +138,100 @@ describe('CreateUser function', () => {
     expect(mockUserModelFindOne).toHaveBeenCalledTimes(1);
     expect(mockUserTypeModelFindOne).toHaveBeenCalledTimes(1);
     expect(mockUserModelCreate).not.toHaveBeenCalled();
+  });
+});
+
+describe('Login function', () => {
+  let mockUserModelFindOne
+  beforeAll(async () => {
+    const mongoURI = `mongodb://${process.env.DB_TESTING_HOST}/${process.env.DB_TESTING_NAME}`;
+    await mongoose.connect(mongoURI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    });
+  });
+
+  afterAll(async () => {
+    await mongoose.connection.close();
+  });
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    mockUserModelFindOne = jest.spyOn(UserModel, 'findOne');
+  });
+
+  it('Should return JWT token for valid credential and active user', async () => {
+    mockUserModelFindOne.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockReturnValue(UserTestData.userLoginData),
+      }
+    });
+
+    decrypt.mockReturnValue(true);
+    getToken.mockReturnValue('mocked_jwt_token');
+
+    const loginResult = await Mutation.Login(null, UserTestData.loginData);
+
+    expect(mockUserModelFindOne).toHaveBeenCalledTimes(1);
+    expect(mockUserModelFindOne).toHaveBeenCalledWith({
+      username: UserTestData.loginData.username,
+    });
+
+    expect(decrypt).toHaveBeenCalledTimes(1);
+    expect(decrypt).toHaveBeenCalledWith(UserTestData.loginData.password, UserTestData.userLoginData.password);
+
+    expect(getToken).toHaveBeenCalledTimes(1);
+    expect(getToken).toHaveBeenCalledWith({userId: UserTestData.userLoginData._id});
+
+    expect(loginResult).toEqual({token: 'mocked_jwt_token'});
+  });
+
+  it('Should throw error for user not found', async () => {
+    mockUserModelFindOne.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(null)
+      };
+    });
+    
+    UserTestData.loginData.username = randomstring.generate(9);
+    await expect(Mutation.Login(null, UserTestData.loginData)).rejects.toThrowError('User not found');
+    
+    expect(decrypt).not.toHaveBeenCalledTimes(1);
+
+    expect(getToken).not.toHaveBeenCalledTimes(1);
+  });
+
+  it('Should throw error for user status is deleted', async() => {
+    mockUserModelFindOne.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(UserTestData.deletedUser)
+      };
+    });
+    
+    UserTestData.loginData.username = UserTestData.deletedUser.username;
+    await expect(Mutation.Login(null, UserTestData.loginData)).rejects.toThrowError(`User ${UserTestData.deletedUser.username} is deleted`);
+    
+    expect(decrypt).not.toHaveBeenCalledTimes(1);
+
+    expect(getToken).not.toHaveBeenCalledTimes(1);
+  });
+
+  it('Should throw error for invalid password', async() => {
+    mockUserModelFindOne.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(UserTestData.userLoginData)
+      };
+    });
+    
+    UserTestData.loginData.password = randomstring.generate(8);
+
+    await expect(Mutation.Login(null, UserTestData.loginData)).rejects.toThrowError('Invalid Password');
+    
+    expect(decrypt).toHaveBeenCalledTimes(1);
+    expect(decrypt).toHaveBeenCalledWith(UserTestData.loginData.password, UserTestData.userLoginData.password);
+      
+    expect(getToken).not.toHaveBeenCalled();
   });
 });

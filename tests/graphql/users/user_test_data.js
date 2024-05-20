@@ -10,7 +10,7 @@ const userData = {
   user_type: new ObjectId('6534a9a756a7ca5ac33c58a2'),
 };
 
-const userTypeData = {
+const userTypeGeneralAdmin = {
   _id: new ObjectId('6534a9a756a7ca5ac33c58a2'),
   name: 'General Admin',
   app_permission: {
@@ -40,7 +40,35 @@ const userTypeData = {
   },
 };
 
+const loginData = {
+  username: 'testing_user',
+  password: 'generaladmin',
+};
+
+const userLoginData = {
+  _id: new ObjectId('65bb4bb4e163fb4bcfd20999'),
+  username: 'testing_user',
+  password: '$2b$10$OSuLjwLr5RCDvFaus0bP0eO993bXTwX6kHGpvxmsgAZ1xihPwjwEm',
+  first_name: 'Safira',
+  last_name: 'Admin',
+  status: 'active',
+  user_type: new ObjectId('6534a9a756a7ca5ac33c58a2'),
+};
+
+const deletedUser = {
+  _id: new ObjectId('65bb4fad98866be3730bcf85'),
+  username: 'pilakasir2',
+  password: '$2b$10$UlQLc00oUrVX9hJ4SvpvnOqyZB0TfECzmbbcKopmh/Fz.s/zpsxKa',
+  first_name: 'Cashier',
+  last_name: 'pilak',
+  status: 'deleted',
+  user_type: new ObjectId('6534b03956a7ca5ac33c58a4'),
+};
+
 module.exports = {
   userData,
-  userTypeData,
+  userTypeGeneralAdmin,
+  loginData,
+  userLoginData,
+  deletedUser
 };
