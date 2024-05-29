@@ -9,6 +9,7 @@ const UserTypeModel = require('../../../graphql/userTypes/user_type.model');
 const { Mutation } = require('../../../graphql/users/user.resolvers');
 const UserTestData = require('./user_test_data');
 const { encrypt, decrypt, getToken } = require('../../../utils/common');
+const { first } = require('lodash');
 
 
 jest.mock('../../../utils/common', () => ({
@@ -233,5 +234,80 @@ describe('Login function', () => {
     expect(decrypt).toHaveBeenCalledWith(UserTestData.loginData.password, UserTestData.userLoginData.password);
       
     expect(getToken).not.toHaveBeenCalled();
+  });
+});
+
+describe('UpdateUser function', () => {
+  let mockUserModelFindById;
+  let mockUserModelFindOne;
+  let mockUserTypeModelFindOne;
+  let mockUserModelFindByIdAndUpdate;
+  let user_input = {
+    username: randomstring.generate(9),
+    first_name: 'Valid',
+    last_name: 'User',
+    user_type: new ObjectId('6534b03956a7ca5ac33c58a4'),
+  };
+
+  beforeAll(async () => {
+    const mongoURI = `mongodb://${process.env.DB_TESTING_HOST}/${process.env.DB_TESTING_NAME}`;
+    await mongoose.connect(mongoURI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    });
+  });
+
+  afterAll(async () => {
+    await mongoose.connection.close();
+  });
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    mockUserModelFindById = jest.spyOn(UserModel, 'findById');
+    mockUserModelFindOne = jest.spyOn(UserModel, 'findOne');
+    mockUserTypeModelFindOne = jest.spyOn(UserTypeModel, 'findOne');
+    mockUserModelFindByIdAndUpdate = jest.spyOn(UserModel, 'findByIdAndUpdate');
+  });
+
+  it('Should update a user with valid id and update input', async() => {
+    let userId = UserTestData.updatedUser._id
+
+    mockUserModelFindById.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockReturnValue(UserTestData.updatedUser)
+      }
+    });
+    mockUserModelFindOne.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(null)
+      }
+    });
+    mockUserTypeModelFindOne.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue({
+          _id: user_input.user_type
+        })
+      };
+    });
+    mockUserModelFindByIdAndUpdate.mockResolvedValue({
+      ... UserTestData.updatedUser,
+      username : user_input.username,
+      first_name: user_input.first_name,
+      last_name: user_input.last_name,
+      user_type: user_input.user_type
+    });
+
+    const updateUserResult = await Mutation.UpdateUser(null, {userId, user_input});
+    expect(mockUserModelFindById).toHaveBeenCalledTimes(1);
+    expect(mockUserModelFindOne).toHaveBeenCalledTimes(1);
+    expect(mockUserTypeModelFindOne).toHaveBeenCalledTimes(1);
+    expect(mockUserModelFindByIdAndUpdate).toHaveBeenCalledTimes(1);
+
+    expect(updateUserResult.username).toEqual(user_input.username);
+    expect(updateUserResult.first_name).toEqual(user_input.first_name);
+    expect(updateUserResult.last_name).toEqual(user_input.last_name);
+    expect(updateUserResult.user_type).toEqual(user_input.user_type);
   });
 });

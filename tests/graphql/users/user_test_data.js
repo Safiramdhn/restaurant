@@ -38,6 +38,7 @@ const userTypeGeneralAdmin = {
       delete: false,
     },
   },
+  status: 'active'
 };
 
 const loginData = {
@@ -65,10 +66,20 @@ const deletedUser = {
   user_type: new ObjectId('6534b03956a7ca5ac33c58a4'),
 };
 
+const updatedUser = {
+  _id: new ObjectId('6656cfed25941d07987e3e9d'),
+  username: 'testing_update',
+  first_name: 'Testing',
+  last_name: 'Update',
+  status: 'active',
+  user_type: new ObjectId('6534a9a756a7ca5ac33c58a2'),
+};
+
 module.exports = {
   userData,
   userTypeGeneralAdmin,
   loginData,
   userLoginData,
-  deletedUser
+  deletedUser,
+  updatedUser,
 };
