@@ -16,14 +16,16 @@
     "moment": "^2.29.4",
     "mongoose": "^7.6.3",
     "nodemon": "^3.0.1",
-    "punycode": "^2.3.1"
+    "punycode": "^2.3.1",
+    "randomstring": "^1.3.0"
   },
   "name": "restaurant",
   "description": "This application is for help restaurant manage available of menu based on stock of ingredients and manage restaurant transactions. To manage that there is 4 user type for admin",
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
-    "dev": "nodemon --experimental-worker -r dotenv/config ./bin/www dotenv_config_path=./.env"
+    "dev": "nodemon --experimental-worker -r dotenv/config ./bin/www dotenv_config_path=./.env",
+    "test": "node --experimental-worker -r dotenv/config ./node_modules/jest/bin/jest"
   },
   "author": "Safira Ramadhani",
   "license": "ISC",
