@@ -9,8 +9,6 @@ const UserTypeModel = require('../../../graphql/userTypes/user_type.model');
 const { Mutation } = require('../../../graphql/users/user.resolvers');
 const UserTestData = require('./user_test_data');
 const { encrypt, decrypt, getToken } = require('../../../utils/common');
-const { first } = require('lodash');
-
 
 jest.mock('../../../utils/common', () => ({
   getToken: jest.fn(),
@@ -44,7 +42,7 @@ describe('CreateUser function', () => {
   beforeEach(() => {
     // clear mock
     jest.clearAllMocks();
-    
+
     // define mock for database
     mockUserModelFindOne = jest.spyOn(UserModel, 'findOne');
     mockUserTypeModelFindOne = jest.spyOn(UserTypeModel, 'findOne');
@@ -63,8 +61,8 @@ describe('CreateUser function', () => {
     // user model find one return null because no existed user
     mockUserModelFindOne.mockImplementation(() => {
       return {
-        lean: jest.fn().mockResolvedValue(null)
-      }
+        lean: jest.fn().mockResolvedValue(null),
+      };
     });
     // find user type once
     mockUserTypeModelFindOne.mockImplementationOnce();
@@ -123,8 +121,8 @@ describe('CreateUser function', () => {
     // user model find one return null because no existed user
     mockUserModelFindOne.mockImplementation(() => {
       return {
-        lean: jest.fn().mockResolvedValue(null)
-      }
+        lean: jest.fn().mockResolvedValue(null),
+      };
     });
     // find user type once
     mockUserTypeModelFindOne.mockImplementationOnce();
@@ -143,7 +141,9 @@ describe('CreateUser function', () => {
 });
 
 describe('Login function', () => {
-  let mockUserModelFindOne
+  let mockUserModelFindOne;
+
+  // connect to testing database
   beforeAll(async () => {
     const mongoURI = `mongodb://${process.env.DB_TESTING_HOST}/${process.env.DB_TESTING_NAME}`;
     await mongoose.connect(mongoURI, {
@@ -154,27 +154,33 @@ describe('Login function', () => {
     });
   });
 
+  // close connection to database
   afterAll(async () => {
     await mongoose.connection.close();
   });
 
+  // initiate before run each of test
   beforeEach(() => {
     jest.resetAllMocks();
     mockUserModelFindOne = jest.spyOn(UserModel, 'findOne');
   });
 
   it('Should return JWT token for valid credential and active user', async () => {
+    // mock user find one return user login data
     mockUserModelFindOne.mockImplementation(() => {
       return {
         lean: jest.fn().mockReturnValue(UserTestData.userLoginData),
-      }
+      };
     });
 
+    // mock common function to decrypt and get token to return value
     decrypt.mockReturnValue(true);
     getToken.mockReturnValue('mocked_jwt_token');
 
+    // call login mutation
     const loginResult = await Mutation.Login(null, UserTestData.loginData);
 
+    // expectation
     expect(mockUserModelFindOne).toHaveBeenCalledTimes(1);
     expect(mockUserModelFindOne).toHaveBeenCalledWith({
       username: UserTestData.loginData.username,
@@ -184,55 +190,64 @@ describe('Login function', () => {
     expect(decrypt).toHaveBeenCalledWith(UserTestData.loginData.password, UserTestData.userLoginData.password);
 
     expect(getToken).toHaveBeenCalledTimes(1);
-    expect(getToken).toHaveBeenCalledWith({userId: UserTestData.userLoginData._id});
+    expect(getToken).toHaveBeenCalledWith({ userId: UserTestData.userLoginData._id });
 
-    expect(loginResult).toEqual({token: 'mocked_jwt_token'});
+    expect(loginResult).toEqual({ token: 'mocked_jwt_token' });
   });
 
   it('Should throw error for user not found', async () => {
-    mockUserModelFindOne.mockImplementation(() => {
-      return {
-        lean: jest.fn().mockResolvedValue(null)
-      };
-    });
-    
+    // update username with random string
     UserTestData.loginData.username = randomstring.generate(9);
+
+    // mock user find one return null
+    mockUserModelFindOne.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(null),
+      };
+    });
+
+    // expect login mutation reject and throw error
     await expect(Mutation.Login(null, UserTestData.loginData)).rejects.toThrowError('User not found');
-    
+
+    // expectation
     expect(decrypt).not.toHaveBeenCalledTimes(1);
 
     expect(getToken).not.toHaveBeenCalledTimes(1);
   });
 
-  it('Should throw error for user status is deleted', async() => {
-    mockUserModelFindOne.mockImplementation(() => {
-      return {
-        lean: jest.fn().mockResolvedValue(UserTestData.deletedUser)
-      };
-    });
-    
+  it('Should throw error for user status is deleted', async () => {
+    // update username to deleted username
     UserTestData.loginData.username = UserTestData.deletedUser.username;
-    await expect(Mutation.Login(null, UserTestData.loginData)).rejects.toThrowError(`User ${UserTestData.deletedUser.username} is deleted`);
-    
-    expect(decrypt).not.toHaveBeenCalledTimes(1);
+    // mock user find one return deleted user
+    mockUserModelFindOne.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(UserTestData.deletedUser),
+      };
+    });
 
+    // expect mutation login reject and throw error
+    await expect(Mutation.Login(null, UserTestData.loginData)).rejects.toThrowError(`User ${UserTestData.deletedUser.username} is deleted`);
+    // expectation
+    expect(decrypt).not.toHaveBeenCalledTimes(1);
     expect(getToken).not.toHaveBeenCalledTimes(1);
   });
 
-  it('Should throw error for invalid password', async() => {
+  it('Should throw error for invalid password', async () => {
+    // update password to random string
+    UserTestData.loginData.password = randomstring.generate(8);
+    // mock user find one return user data
     mockUserModelFindOne.mockImplementation(() => {
       return {
-        lean: jest.fn().mockResolvedValue(UserTestData.userLoginData)
+        lean: jest.fn().mockResolvedValue(UserTestData.userLoginData),
       };
     });
-    
-    UserTestData.loginData.password = randomstring.generate(8);
 
+    // expect mutation login reject and throw error
     await expect(Mutation.Login(null, UserTestData.loginData)).rejects.toThrowError('Invalid Password');
-    
+
+    // expectation
     expect(decrypt).toHaveBeenCalledTimes(1);
     expect(decrypt).toHaveBeenCalledWith(UserTestData.loginData.password, UserTestData.userLoginData.password);
-      
     expect(getToken).not.toHaveBeenCalled();
   });
 });
@@ -242,13 +257,9 @@ describe('UpdateUser function', () => {
   let mockUserModelFindOne;
   let mockUserTypeModelFindOne;
   let mockUserModelFindByIdAndUpdate;
-  let user_input = {
-    username: randomstring.generate(9),
-    first_name: 'Valid',
-    last_name: 'User',
-    user_type: new ObjectId('6534b03956a7ca5ac33c58a4'),
-  };
+  let user_input;
 
+  // connect to testing database
   beforeAll(async () => {
     const mongoURI = `mongodb://${process.env.DB_TESTING_HOST}/${process.env.DB_TESTING_NAME}`;
     await mongoose.connect(mongoURI, {
@@ -259,55 +270,177 @@ describe('UpdateUser function', () => {
     });
   });
 
+  // disconnect from testing database
   afterAll(async () => {
     await mongoose.connection.close();
   });
 
+  // initiate before run each of test
   beforeEach(() => {
     jest.resetAllMocks();
     mockUserModelFindById = jest.spyOn(UserModel, 'findById');
     mockUserModelFindOne = jest.spyOn(UserModel, 'findOne');
     mockUserTypeModelFindOne = jest.spyOn(UserTypeModel, 'findOne');
     mockUserModelFindByIdAndUpdate = jest.spyOn(UserModel, 'findByIdAndUpdate');
+    user_input = {
+      username: randomstring.generate(9),
+      first_name: 'Valid',
+      last_name: 'User',
+      user_type: new ObjectId('6534b03956a7ca5ac33c58a4'),
+    };
   });
 
-  it('Should update a user with valid id and update input', async() => {
-    let userId = UserTestData.updatedUser._id
+  it('Should update a user with valid id and update input', async () => {
+    // set id
+    let userId = UserTestData.updatedUser._id;
 
+    // mock user find by id return user data
     mockUserModelFindById.mockImplementation(() => {
       return {
-        lean: jest.fn().mockReturnValue(UserTestData.updatedUser)
-      }
+        lean: jest.fn().mockReturnValue(UserTestData.updatedUser),
+      };
     });
+    // mock user find one return null
     mockUserModelFindOne.mockImplementation(() => {
       return {
-        lean: jest.fn().mockResolvedValue(null)
-      }
+        lean: jest.fn().mockResolvedValue(null),
+      };
     });
+    // mock user type find one return user type id
     mockUserTypeModelFindOne.mockImplementation(() => {
       return {
         lean: jest.fn().mockResolvedValue({
-          _id: user_input.user_type
-        })
+          _id: user_input.user_type,
+        }),
       };
     });
+    // mock user find by id and update return user data
     mockUserModelFindByIdAndUpdate.mockResolvedValue({
-      ... UserTestData.updatedUser,
-      username : user_input.username,
+      ...UserTestData.updatedUser,
+      username: user_input.username,
       first_name: user_input.first_name,
       last_name: user_input.last_name,
-      user_type: user_input.user_type
+      user_type: user_input.user_type,
     });
 
-    const updateUserResult = await Mutation.UpdateUser(null, {userId, user_input});
+    // call mutation UpdateUser
+    const updateUserResult = await Mutation.UpdateUser(null, { userId, user_input });
+    
+    // expectation
     expect(mockUserModelFindById).toHaveBeenCalledTimes(1);
     expect(mockUserModelFindOne).toHaveBeenCalledTimes(1);
     expect(mockUserTypeModelFindOne).toHaveBeenCalledTimes(1);
     expect(mockUserModelFindByIdAndUpdate).toHaveBeenCalledTimes(1);
-
+    // expect similarities result and input test data
     expect(updateUserResult.username).toEqual(user_input.username);
     expect(updateUserResult.first_name).toEqual(user_input.first_name);
     expect(updateUserResult.last_name).toEqual(user_input.last_name);
     expect(updateUserResult.user_type).toEqual(user_input.user_type);
+  });
+
+  it('Should throw error for user not found', async () => {
+    // generate random id
+    const invalidUserId = new ObjectId();
+
+    // mock user find id return null
+    mockUserModelFindById.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(null),
+      };
+    });
+    // expect mutatuon updateuser reject and throw error
+    await expect(Mutation.UpdateUser(null, { invalidUserId, user_input })).rejects.toThrowError('User not found');
+
+    // expectation
+    expect(mockUserModelFindById).toHaveBeenCalledTimes(1);
+    expect(mockUserModelFindOne).not.toHaveBeenCalled();
+    expect(mockUserTypeModelFindOne).not.toHaveBeenCalled();
+    expect(mockUserModelFindByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('Should throw error for user status is deleted', async () => {
+    // set id with deleted user test data
+    const deletedUserId = UserTestData.deletedUser._id;
+
+    // mock user find by id return deleted user
+    mockUserModelFindById.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockReturnValue({
+          status: UserTestData.deletedUser.status,
+        }),
+      };
+    });
+    // expdect mutation updateuser reject and throw error
+    await expect(Mutation.UpdateUser(null, { deletedUserId, user_input })).rejects.toThrowError('User is already deleted');
+
+    // expectation
+    expect(mockUserModelFindById).toHaveBeenCalledTimes(1);
+    expect(mockUserModelFindOne).not.toHaveBeenCalled();
+    expect(mockUserTypeModelFindOne).not.toHaveBeenCalled();
+    expect(mockUserModelFindByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('Should throw error for existed username', async () => {
+    // set id
+    const userId = UserTestData.updatedUser._id;
+    // set username input with existed username
+    user_input.username = UserTestData.userData.username;
+
+    // mock user find by id return user data
+    mockUserModelFindById.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(UserTestData.updatedUser),
+      };
+    });
+
+    // mock user find one return user data
+    mockUserModelFindOne.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockReturnValue(UserTestData.userData),
+      };
+    });
+    // expect mutation updateuser reject and throw error
+    await expect(Mutation.UpdateUser(null, { userId, user_input })).rejects.toThrowError(`Username ${user_input.username} is already existed`);
+
+    // expectation
+    expect(mockUserModelFindById).toHaveBeenCalledTimes(1);
+    expect(mockUserModelFindOne).toHaveBeenCalledTimes(1);
+    expect(mockUserTypeModelFindOne).not.toHaveBeenCalled();
+    expect(mockUserModelFindByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('Should throw error for invalid user type', async () => {
+    // set id
+    const userId = UserTestData.updatedUser._id;
+    // set random user type id
+    user_input.user_type = new ObjectId();
+
+    // mock user find by id return user data
+    mockUserModelFindById.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockReturnValue(UserTestData.updatedUser),
+      };
+    });
+    // user model find one return null because no existed user
+    mockUserModelFindOne.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(null),
+      };
+    });
+    // find user type once return null
+    mockUserTypeModelFindOne.mockImplementationOnce(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(null),
+      };
+    });
+
+    // call update user function with new user type id then throw error
+    await expect(Mutation.UpdateUser(null, { userId, user_input })).rejects.toThrowError('Invalid user type');
+
+    // declare expectation before and after throw error
+    expect(mockUserModelFindById).toHaveBeenCalledTimes(1);
+    expect(mockUserModelFindOne).toHaveBeenCalledTimes(1);
+    expect(mockUserTypeModelFindOne).toHaveBeenCalledTimes(1);
+    expect(mockUserModelFindByIdAndUpdate).not.toHaveBeenCalled();
   });
 });
