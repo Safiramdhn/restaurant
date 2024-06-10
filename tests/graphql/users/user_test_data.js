@@ -38,7 +38,7 @@ const userTypeGeneralAdmin = {
       delete: false,
     },
   },
-  status: 'active'
+  status: 'active',
 };
 
 const loginData = {
@@ -63,7 +63,11 @@ const deletedUser = {
   first_name: 'Cashier',
   last_name: 'pilak',
   status: 'deleted',
-  user_type: new ObjectId('6534b03956a7ca5ac33c58a4'),
+  user_type: {
+    _id: new ObjectId('6534b03956a7ca5ac33c58a4'),
+    name: 'Cashier',
+    status: 'active',
+  },
 };
 
 const updatedUser = {
@@ -75,6 +79,16 @@ const updatedUser = {
   user_type: new ObjectId('6534a9a756a7ca5ac33c58a2'),
 };
 
+const userToDelete = {
+  _id: new ObjectId('665ecd577047272a56ad0ecd'),
+  username: 'testing_delete',
+  password: '$2b$10$OSuLjwLr5RCDvFaus0bP0eO993bXTwX6kHGpvxmsgAZ1xihPwjwEm',
+  first_name: 'Testing',
+  last_name: 'Delete',
+  status: 'active',
+  user_type: new ObjectId('6534b03956a7ca5ac33c58a4'),
+};
+
 module.exports = {
   userData,
   userTypeGeneralAdmin,
@@ -82,4 +96,5 @@ module.exports = {
   userLoginData,
   deletedUser,
   updatedUser,
+  userToDelete,
 };

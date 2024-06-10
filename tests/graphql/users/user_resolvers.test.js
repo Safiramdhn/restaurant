@@ -444,3 +444,72 @@ describe('UpdateUser function', () => {
     expect(mockUserModelFindByIdAndUpdate).not.toHaveBeenCalled();
   });
 });
+
+describe('DeleteUser function', () => {
+  let mockUserModelFindById;
+  let mockUserModelFindByIdAndUpdate;
+
+  // Connect to testing database
+  beforeAll(async () => {
+    const mongoURI = `mongodb://${process.env.DB_TESTING_HOST}/${process.env.DB_TESTING_NAME}`;
+    await mongoose.connect(mongoURI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    });
+  });
+
+  // disconnect from testing database
+  afterAll(async () => {
+    await mongoose.connection.close();
+  });
+
+  // initiate before run each of test
+  beforeEach(() => {
+    jest.resetAllMocks();
+    mockUserModelFindById = jest.spyOn(UserModel, 'findById');
+    mockUserModelFindByIdAndUpdate = jest.spyOn(UserModel, 'findByIdAndUpdate');
+  });
+
+  it('Should mark status as deleted with valid id', async () => {
+    // set user id
+    const userId = UserTestData.deletedUser._id;
+    // mock user find by id return user data
+    mockUserModelFindById.mockImplementation(()=>{
+      return {
+        populate: jest.fn().mockResolvedValue(UserTestData.deletedUser)
+      }
+    })
+    // mock user find by id and update return deleted user
+    mockUserModelFindByIdAndUpdate.mockResolvedValue({
+      ... UserTestData.deletedUser
+    });
+
+    // get result of d4lete user mutation
+    const deleteUserResult = await Mutation.DeleteUser(null, {userId});
+    // declare expectation before and after run the mutation
+    expect(mockUserModelFindById).toHaveBeenCalledTimes(1);
+    expect(mockUserModelFindByIdAndUpdate).toHaveBeenCalledTimes(1);
+    expect(deleteUserResult).toEqual(`user ${UserTestData.deletedUser.first_name} ${UserTestData.deletedUser.last_name} has been deleted`);
+  });
+
+  it('Should throw error for user type General Admin', async () => {
+    // set user id
+    const userId = UserTestData.deletedUser._id
+    // set user type General Admin
+    UserTestData.deletedUser.user_type.name = 'General Admin';
+    // mock user find by id return user data
+    mockUserModelFindById.mockImplementation(()=>{
+      return {
+        populate: jest.fn().mockResolvedValue(UserTestData.deletedUser)
+      }
+    })
+
+    // expect delete user mutation reject and throw an error
+    await expect(Mutation.DeleteUser(null, {userId})).rejects.toThrowError('You cannot delete General Admin user');
+    // declare expectation before and after throw error
+    expect(mockUserModelFindById).toHaveBeenCalledTimes(1);
+    expect(mockUserModelFindByIdAndUpdate).not.toHaveBeenCalled;
+  });
+})
