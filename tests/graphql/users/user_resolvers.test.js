@@ -6,7 +6,7 @@ const randomstring = require('randomstring');
 
 const UserModel = require('../../../graphql/users/user.model');
 const UserTypeModel = require('../../../graphql/userTypes/user_type.model');
-const { Mutation } = require('../../../graphql/users/user.resolvers');
+const { Mutation, Query } = require('../../../graphql/users/user.resolvers');
 const UserTestData = require('./user_test_data');
 const { encrypt, decrypt, getToken } = require('../../../utils/common');
 
@@ -105,10 +105,10 @@ describe('CreateUser function', () => {
     // user model find one return user object because existed user
     mockUserModelFindOne.mockImplementation(() => {
       return {
-        lean: jest.fn().mockReturnValue(UserTestData.userData),
+        lean: jest.fn().mockReturnValue(UserTestData.userData[0]),
       };
     });
-    userInput.username = UserTestData.userData.username;
+    userInput.username = UserTestData.userData[0].username;
 
     // call create user function with existed username then throwing error
     await expect(Mutation.CreateUser(null, { user_input: userInput })).rejects.toThrowError('Username already existed');
@@ -169,7 +169,7 @@ describe('Login function', () => {
     // mock user find one return user login data
     mockUserModelFindOne.mockImplementation(() => {
       return {
-        lean: jest.fn().mockReturnValue(UserTestData.userLoginData),
+        lean: jest.fn().mockReturnValue(UserTestData.userData[1]),
       };
     });
 
@@ -187,10 +187,10 @@ describe('Login function', () => {
     });
 
     expect(decrypt).toHaveBeenCalledTimes(1);
-    expect(decrypt).toHaveBeenCalledWith(UserTestData.loginData.password, UserTestData.userLoginData.password);
+    expect(decrypt).toHaveBeenCalledWith(UserTestData.loginData.password, UserTestData.userData[1].password);
 
     expect(getToken).toHaveBeenCalledTimes(1);
-    expect(getToken).toHaveBeenCalledWith({ userId: UserTestData.userLoginData._id });
+    expect(getToken).toHaveBeenCalledWith({ userId: UserTestData.userData[1]._id });
 
     expect(loginResult).toEqual({ token: 'mocked_jwt_token' });
   });
@@ -217,16 +217,16 @@ describe('Login function', () => {
 
   it('Should throw error for user status is deleted', async () => {
     // update username to deleted username
-    UserTestData.loginData.username = UserTestData.deletedUser.username;
+    UserTestData.loginData.username = UserTestData.userData[2].username;
     // mock user find one return deleted user
     mockUserModelFindOne.mockImplementation(() => {
       return {
-        lean: jest.fn().mockResolvedValue(UserTestData.deletedUser),
+        lean: jest.fn().mockResolvedValue(UserTestData.userData[2]),
       };
     });
 
     // expect mutation login reject and throw error
-    await expect(Mutation.Login(null, UserTestData.loginData)).rejects.toThrowError(`User ${UserTestData.deletedUser.username} is deleted`);
+    await expect(Mutation.Login(null, UserTestData.loginData)).rejects.toThrowError(`User ${UserTestData.userData[2].username} is deleted`);
     // expectation
     expect(decrypt).not.toHaveBeenCalledTimes(1);
     expect(getToken).not.toHaveBeenCalledTimes(1);
@@ -238,7 +238,7 @@ describe('Login function', () => {
     // mock user find one return user data
     mockUserModelFindOne.mockImplementation(() => {
       return {
-        lean: jest.fn().mockResolvedValue(UserTestData.userLoginData),
+        lean: jest.fn().mockResolvedValue(UserTestData.userData[1]),
       };
     });
 
@@ -247,7 +247,7 @@ describe('Login function', () => {
 
     // expectation
     expect(decrypt).toHaveBeenCalledTimes(1);
-    expect(decrypt).toHaveBeenCalledWith(UserTestData.loginData.password, UserTestData.userLoginData.password);
+    expect(decrypt).toHaveBeenCalledWith(UserTestData.loginData.password, UserTestData.userData[1].password);
     expect(getToken).not.toHaveBeenCalled();
   });
 });
@@ -292,12 +292,12 @@ describe('UpdateUser function', () => {
 
   it('Should update a user with valid id and update input', async () => {
     // set id
-    let userId = UserTestData.updatedUser._id;
+    let userId = UserTestData.userData[3]._id;
 
     // mock user find by id return user data
     mockUserModelFindById.mockImplementation(() => {
       return {
-        lean: jest.fn().mockReturnValue(UserTestData.updatedUser),
+        lean: jest.fn().mockReturnValue(UserTestData.userData[3]),
       };
     });
     // mock user find one return null
@@ -316,7 +316,7 @@ describe('UpdateUser function', () => {
     });
     // mock user find by id and update return user data
     mockUserModelFindByIdAndUpdate.mockResolvedValue({
-      ...UserTestData.updatedUser,
+      ...UserTestData.userData[3],
       username: user_input.username,
       first_name: user_input.first_name,
       last_name: user_input.last_name,
@@ -325,7 +325,7 @@ describe('UpdateUser function', () => {
 
     // call mutation UpdateUser
     const updateUserResult = await Mutation.UpdateUser(null, { userId, user_input });
-    
+
     // expectation
     expect(mockUserModelFindById).toHaveBeenCalledTimes(1);
     expect(mockUserModelFindOne).toHaveBeenCalledTimes(1);
@@ -360,13 +360,13 @@ describe('UpdateUser function', () => {
 
   it('Should throw error for user status is deleted', async () => {
     // set id with deleted user test data
-    const deletedUserId = UserTestData.deletedUser._id;
+    const deletedUserId = UserTestData.userData[2]._id;
 
     // mock user find by id return deleted user
     mockUserModelFindById.mockImplementation(() => {
       return {
         lean: jest.fn().mockReturnValue({
-          status: UserTestData.deletedUser.status,
+          status: UserTestData.userData[2].status,
         }),
       };
     });
@@ -382,21 +382,21 @@ describe('UpdateUser function', () => {
 
   it('Should throw error for existed username', async () => {
     // set id
-    const userId = UserTestData.updatedUser._id;
+    const userId = UserTestData.userData[3]._id;
     // set username input with existed username
-    user_input.username = UserTestData.userData.username;
+    user_input.username = UserTestData.userData[0].username;
 
     // mock user find by id return user data
     mockUserModelFindById.mockImplementation(() => {
       return {
-        lean: jest.fn().mockResolvedValue(UserTestData.updatedUser),
+        lean: jest.fn().mockResolvedValue(UserTestData.userData[3]),
       };
     });
 
     // mock user find one return user data
     mockUserModelFindOne.mockImplementation(() => {
       return {
-        lean: jest.fn().mockReturnValue(UserTestData.userData),
+        lean: jest.fn().mockReturnValue(UserTestData.userData[0]),
       };
     });
     // expect mutation updateuser reject and throw error
@@ -411,14 +411,14 @@ describe('UpdateUser function', () => {
 
   it('Should throw error for invalid user type', async () => {
     // set id
-    const userId = UserTestData.updatedUser._id;
+    const userId = UserTestData.userData[3]._id;
     // set random user type id
     user_input.user_type = new ObjectId();
 
     // mock user find by id return user data
     mockUserModelFindById.mockImplementation(() => {
       return {
-        lean: jest.fn().mockReturnValue(UserTestData.updatedUser),
+        lean: jest.fn().mockReturnValue(UserTestData.userData[3]),
       };
     });
     // user model find one return null because no existed user
@@ -474,42 +474,247 @@ describe('DeleteUser function', () => {
 
   it('Should mark status as deleted with valid id', async () => {
     // set user id
-    const userId = UserTestData.deletedUser._id;
+    const userId = UserTestData.userData[2]._id;
     // mock user find by id return user data
-    mockUserModelFindById.mockImplementation(()=>{
+    mockUserModelFindById.mockImplementation(() => {
       return {
-        populate: jest.fn().mockResolvedValue(UserTestData.deletedUser)
-      }
-    })
+        populate: jest.fn().mockResolvedValue(UserTestData.userData[2]),
+      };
+    });
     // mock user find by id and update return deleted user
     mockUserModelFindByIdAndUpdate.mockResolvedValue({
-      ... UserTestData.deletedUser
+      ...UserTestData.userData[2],
     });
 
     // get result of d4lete user mutation
-    const deleteUserResult = await Mutation.DeleteUser(null, {userId});
+    const deleteUserResult = await Mutation.DeleteUser(null, { userId });
     // declare expectation before and after run the mutation
     expect(mockUserModelFindById).toHaveBeenCalledTimes(1);
     expect(mockUserModelFindByIdAndUpdate).toHaveBeenCalledTimes(1);
-    expect(deleteUserResult).toEqual(`user ${UserTestData.deletedUser.first_name} ${UserTestData.deletedUser.last_name} has been deleted`);
+    expect(deleteUserResult).toEqual(`user ${UserTestData.userData[2].first_name} ${UserTestData.userData[2].last_name} has been deleted`);
   });
 
   it('Should throw error for user type General Admin', async () => {
     // set user id
-    const userId = UserTestData.deletedUser._id
+    const userId = UserTestData.userData[2]._id;
     // set user type General Admin
-    UserTestData.deletedUser.user_type.name = 'General Admin';
+    UserTestData.userData[2].user_type.name = 'General Admin';
     // mock user find by id return user data
-    mockUserModelFindById.mockImplementation(()=>{
+    mockUserModelFindById.mockImplementation(() => {
       return {
-        populate: jest.fn().mockResolvedValue(UserTestData.deletedUser)
-      }
-    })
+        populate: jest.fn().mockResolvedValue(UserTestData.userData[2]),
+      };
+    });
 
     // expect delete user mutation reject and throw an error
-    await expect(Mutation.DeleteUser(null, {userId})).rejects.toThrowError('You cannot delete General Admin user');
+    await expect(Mutation.DeleteUser(null, { userId })).rejects.toThrowError('You cannot delete General Admin user');
     // declare expectation before and after throw error
     expect(mockUserModelFindById).toHaveBeenCalledTimes(1);
     expect(mockUserModelFindByIdAndUpdate).not.toHaveBeenCalled;
   });
-})
+});
+
+// QUERY
+
+describe('GetAllUsers function', () => {
+  let mockUserModelAggregate;
+  let pagination;
+
+  // Connect to testing database
+  beforeAll(async () => {
+    const mongoURI = `mongodb://${process.env.DB_TESTING_HOST}/${process.env.DB_TESTING_NAME}`;
+    await mongoose.connect(mongoURI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    });
+  });
+
+  // disconnect from testing database
+  afterAll(async () => {
+    await mongoose.connection.close();
+  });
+
+  // initiate before run each of test
+  beforeEach(() => {
+    jest.resetAllMocks();
+    mockUserModelAggregate = jest.spyOn(UserModel, 'aggregate');
+    pagination = {
+      limit: 5,
+      page: 0,
+    };
+  });
+
+  it('Should get users data based on filter, sorting and pagination', async () => {
+    // sort test data based on username
+    const userSortByUsername = UserTestData.fiveUsers.sort((a, b) => a.username.localeCompare(b.username));
+
+    // mock user aggregate return value array of object
+    mockUserModelAggregate.mockResolvedValue([
+      {
+        data: userSortByUsername,
+        countData: [
+          {
+            _id: null,
+            count: userSortByUsername.length,
+          },
+        ],
+      },
+    ]);
+
+    // get result from get all users query
+    const getAllUsersResult = await Query.GetAllUsers(
+      {},
+      {
+        filter: {
+          full_name: 'Test User',
+        },
+        sorting: {
+          username: 'asc',
+        },
+        pagination,
+      }
+    );
+
+    // declare expectation before and after result
+    expect(mockUserModelAggregate).toHaveBeenCalledTimes(1);
+    expect(getAllUsersResult).toStrictEqual(userSortByUsername);
+  });
+
+  it('Should get users data based on filter and pagination', async () => {
+    // filter user test data based on username
+    const filteredUser = UserTestData.fiveUsers.filter((user) => user.username === 'cn94rUOsU');
+    // mock user aggregate return value array of object
+    mockUserModelAggregate.mockResolvedValue([
+      {
+        data: filteredUser,
+        countData: [
+          {
+            _id: null,
+            count: filteredUser.length,
+          },
+        ],
+      },
+    ]);
+
+    // get result from get all users query
+    const getAllUsersResult = await Query.GetAllUsers(
+      {},
+      {
+        filter: { username: 'cn94rUOsU' },
+        sorting: null,
+        pagination,
+      }
+    );
+
+    // declare expectation before and after result
+    expect(mockUserModelAggregate).toHaveBeenCalledTimes(1);
+    expect(getAllUsersResult).toStrictEqual([
+      {
+        ...filteredUser[0],
+        count_document: filteredUser.length,
+      },
+    ]);
+  });
+
+  it('Should get users data based on sorting and pagination', async () => {
+    const userSortByUserType = UserTestData.userData.sort((a, b) => a.user_type.name - b.user_type.name);
+    userSortByUserType.reverse();
+    mockUserModelAggregate.mockResolvedValue([
+      {
+        data: userSortByUserType,
+        countData: [
+          {
+            _id: null,
+            count: userSortByUserType.length,
+          },
+        ],
+      },
+    ]);
+
+    const getAllUsersResult = await Query.GetAllUsers(
+      {},
+      {
+        filter: null,
+        sorting: {
+          user_type: 'desc',
+        },
+        pagination,
+      }
+    );
+
+    expect(mockUserModelAggregate).toHaveBeenCalledTimes(1);
+    expect(getAllUsersResult).toStrictEqual(userSortByUserType);
+  });
+
+  it('Should get users data based on filter and sorting', async () => {
+    const filteredUser = UserTestData.fiveUsers.filter((user) => String(user.user_type) === '6534a9a756a7ca5ac33c58a2');
+    filteredUser.map((user) => {
+      user.fullname = `${user.first_name} ${user.last_name}`;
+    });
+    const userSortByFullname = filteredUser.sort((a, b) => a.fullname.localeCompare(b.fullname));
+
+    mockUserModelAggregate.mockResolvedValue(userSortByFullname);
+
+    const getAllUsersResult = await Query.GetAllUsers(
+      {},
+      {
+        filter: {
+          user_type: '6534a9a756a7ca5ac33c58a2',
+        },
+        sorting: {
+          user_type: 'desc',
+        },
+      }
+    );
+
+    expect(mockUserModelAggregate).toHaveBeenCalledTimes(1);
+    expect(getAllUsersResult).toStrictEqual(userSortByFullname);
+  });
+
+  it('Should get users data without using any of filter, sorting or pagination', async () => {
+    mockUserModelAggregate.mockImplementation(UserTestData.fiveUsers);
+
+    const getAllUsersResult = await Query.GetAllUsers({}, {});
+
+    expect(mockUserModelAggregate).toHaveBeenCalled(1);
+    expect(getAllUsersResult).toStrictEqual(UserTestData.fiveUsers);
+  });
+  
+  it('Should return empty array if didn’t match the filter', async () => {
+    mockUserModelAggregate.mockResolvedValue([]);
+
+    const filterFullnameResult = await Query.GetAllUsers(
+      {},
+      {
+        filter: {
+          full_name: randomstring.generate(9),
+        },
+      }
+    );
+
+    const filterUsernameResult = await Query.GetAllUsers(
+      {},
+      {
+        filter: {
+          username: randomstring.generate(9),
+        },
+      }
+    );
+
+    const filterUserTypeResult = await Query.GetAllUsers(
+      {},
+      {
+        filter: {
+          user_type: new ObjectId(),
+        },
+      }
+    );
+
+    expect(mockUserModelAggregate).toHaveBeenCalled(3);
+    expect(filterFullnameResult).toStrictEqual([]);
+    expect(filterUsernameResult).toStrictEqual([]);
+    expect(filterUserTypeResult).toStrictEqual([]);
+  });
+});
