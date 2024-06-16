@@ -17,7 +17,7 @@ jest.mock('../../../utils/common', () => ({
 }));
 
 // MUTATION
-describe('CreateUser function', () => {
+describe('CreateUser Mutation', () => {
   let mockUserModelFindOne;
   let mockUserTypeModelFindOne;
   let mockUserModelCreate;
@@ -140,7 +140,7 @@ describe('CreateUser function', () => {
   });
 });
 
-describe('Login function', () => {
+describe('Login Mutation', () => {
   let mockUserModelFindOne;
 
   // connect to testing database
@@ -252,7 +252,7 @@ describe('Login function', () => {
   });
 });
 
-describe('UpdateUser function', () => {
+describe('UpdateUser Mutation', () => {
   let mockUserModelFindById;
   let mockUserModelFindOne;
   let mockUserTypeModelFindOne;
@@ -445,7 +445,7 @@ describe('UpdateUser function', () => {
   });
 });
 
-describe('DeleteUser function', () => {
+describe('DeleteUser Mutation', () => {
   let mockUserModelFindById;
   let mockUserModelFindByIdAndUpdate;
 
@@ -516,7 +516,7 @@ describe('DeleteUser function', () => {
 
 // QUERY
 
-describe('GetAllUsers function', () => {
+describe('GetAllUsers Query', () => {
   let mockUserModelAggregate;
   let pagination;
 
@@ -565,7 +565,7 @@ describe('GetAllUsers function', () => {
 
     // get result from get all users query
     const getAllUsersResult = await Query.GetAllUsers(
-      {},
+      null,
       {
         filter: {
           full_name: 'Test User',
@@ -600,7 +600,7 @@ describe('GetAllUsers function', () => {
 
     // get result from get all users query
     const getAllUsersResult = await Query.GetAllUsers(
-      {},
+      null,
       {
         filter: { username: 'cn94rUOsU' },
         sorting: null,
@@ -619,8 +619,11 @@ describe('GetAllUsers function', () => {
   });
 
   it('Should get users data based on sorting and pagination', async () => {
+    // sort user test data based on usertype
     const userSortByUserType = UserTestData.userData.sort((a, b) => a.user_type.name - b.user_type.name);
+    // descending sorting
     userSortByUserType.reverse();
+    // mock user aggregate return array of object
     mockUserModelAggregate.mockResolvedValue([
       {
         data: userSortByUserType,
@@ -633,8 +636,9 @@ describe('GetAllUsers function', () => {
       },
     ]);
 
+    // get result from get all users query
     const getAllUsersResult = await Query.GetAllUsers(
-      {},
+      null,
       {
         filter: null,
         sorting: {
@@ -644,21 +648,26 @@ describe('GetAllUsers function', () => {
       }
     );
 
+    // declare expectation before and after result
     expect(mockUserModelAggregate).toHaveBeenCalledTimes(1);
     expect(getAllUsersResult).toStrictEqual(userSortByUserType);
   });
 
   it('Should get users data based on filter and sorting', async () => {
+    // filter user test data based on usertype
     const filteredUser = UserTestData.fiveUsers.filter((user) => String(user.user_type) === '6534a9a756a7ca5ac33c58a2');
+    // create fullname field to use fullname sorting
     filteredUser.map((user) => {
       user.fullname = `${user.first_name} ${user.last_name}`;
     });
     const userSortByFullname = filteredUser.sort((a, b) => a.fullname.localeCompare(b.fullname));
 
+    // mock user aggregate return user data sorted by fullname
     mockUserModelAggregate.mockResolvedValue(userSortByFullname);
 
+    // get result from get all users query
     const getAllUsersResult = await Query.GetAllUsers(
-      {},
+      null,
       {
         filter: {
           user_type: '6534a9a756a7ca5ac33c58a2',
@@ -669,6 +678,7 @@ describe('GetAllUsers function', () => {
       }
     );
 
+    // declare expectation before and after result
     expect(mockUserModelAggregate).toHaveBeenCalledTimes(1);
     expect(getAllUsersResult).toStrictEqual(userSortByFullname);
   });
@@ -676,17 +686,21 @@ describe('GetAllUsers function', () => {
   it('Should get users data without using any of filter, sorting or pagination', async () => {
     mockUserModelAggregate.mockImplementation(UserTestData.fiveUsers);
 
-    const getAllUsersResult = await Query.GetAllUsers({}, {});
+    // get result from get all users query
+    const getAllUsersResult = await Query.GetAllUsers(null, {});
 
+    // declare expectation before and after result
     expect(mockUserModelAggregate).toHaveBeenCalled(1);
     expect(getAllUsersResult).toStrictEqual(UserTestData.fiveUsers);
   });
   
   it('Should return empty array if didn’t match the filter', async () => {
+    // mock user aggregate return empty array
     mockUserModelAggregate.mockResolvedValue([]);
 
+    // declare expectation before and after result for each filter
     const filterFullnameResult = await Query.GetAllUsers(
-      {},
+      null,
       {
         filter: {
           full_name: randomstring.generate(9),
@@ -695,7 +709,7 @@ describe('GetAllUsers function', () => {
     );
 
     const filterUsernameResult = await Query.GetAllUsers(
-      {},
+      null,
       {
         filter: {
           username: randomstring.generate(9),
@@ -704,7 +718,7 @@ describe('GetAllUsers function', () => {
     );
 
     const filterUserTypeResult = await Query.GetAllUsers(
-      {},
+      null,
       {
         filter: {
           user_type: new ObjectId(),
@@ -712,9 +726,87 @@ describe('GetAllUsers function', () => {
       }
     );
 
+    // declare expectation before and after result
     expect(mockUserModelAggregate).toHaveBeenCalled(3);
     expect(filterFullnameResult).toStrictEqual([]);
     expect(filterUsernameResult).toStrictEqual([]);
     expect(filterUserTypeResult).toStrictEqual([]);
   });
 });
+
+describe('GetOneUser Query', () => {
+  let mockUserModelFindOne;
+
+  // Connect to testing database
+  beforeAll(async () => {
+    const mongoURI = `mongodb://${process.env.DB_TESTING_HOST}/${process.env.DB_TESTING_NAME}`;
+    await mongoose.connect(mongoURI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    });
+  });
+
+  // disconnect from testing database
+  afterAll(async () => {
+    await mongoose.connection.close();
+  });
+
+  // initiate before run each of test
+  beforeEach(() => {
+    jest.resetAllMocks();
+    mockUserModelFindOne = jest.spyOn(UserModel, 'findOne');
+  });
+
+  it('Should get user data based on id with status active', async () => {
+    // declare user id
+    const userId = UserTestData.userData[0];
+    // mock user find one return with lean()
+    mockUserModelFindOne.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(UserTestData.userData[0]),
+      };
+    });
+
+    // get result from get one user query
+    const getOneUserResult = await Query.GetOneUser(null, { userId });
+
+    // declare expectation before and after result
+    expect(mockUserModelFindOne).toHaveBeenCalledTimes(1);
+    expect(getOneUserResult).toEqual(UserTestData.userData[0]);
+  });
+
+  it('Should throw error if user not found', async () => {
+    // declare random object Id
+    const userId = new ObjectId();
+    // mock user find one return with lean() but null
+    mockUserModelFindOne.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(null),
+      };
+    });
+
+    // call and expect get one user query to throw error
+    await expect(Query.GetOneUser(null, { userId })).rejects.toThrowError('User not found');
+    // declare expectation before and after throw error
+    expect(mockUserModelFindOne).toHaveBeenCalledTimes(1);
+  });
+
+  it('Should throw error if user status is deleted', async () => {
+    // declare deleted user id
+    const userId = UserTestData.userData[2];
+
+    // mock user find one return with lean() but null
+    mockUserModelFindOne.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(null),
+      };
+    });
+
+    // call and expect get one user query to throw error
+    await expect(Query.GetOneUser(null, { userId })).rejects.toThrowError('User not found');
+    // declare expectation before and after throw error
+    expect(mockUserModelFindOne).toHaveBeenCalledTimes(1);
+  })
+})
