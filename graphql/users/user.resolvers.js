@@ -13,9 +13,9 @@ const GetAllUsers = async (parent, { filter, sorting, pagination }) => {
   };
   let sort = {};
 
-  if (filter.full_name || sorting.full_name) {
+  if ((filter && filter.full_name) || (sorting && sorting.full_name)) {
     aggregateQuery.push({
-      $addField: {
+      $addFields: {
         fullname: {
           $concat: ['$first_name', ' ', '$last_name'],
         },
