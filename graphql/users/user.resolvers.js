@@ -4,6 +4,8 @@ const UserTypeModel = require('../userTypes/user_type.model');
 const { getToken, encrypt, decrypt } = require('../../utils/common');
 
 const _ = require('lodash');
+const mongoose = require('mongoose');
+const ObjectId = mongoose.Types.ObjectId;
 
 //**** Query */
 const GetAllUsers = async (parent, { filter, sorting, pagination }) => {
@@ -13,9 +15,9 @@ const GetAllUsers = async (parent, { filter, sorting, pagination }) => {
   };
   let sort = {};
 
-  if (filter.full_name || sorting.full_name) {
+  if ((filter && filter.full_name) || (sorting && sorting.full_name)) {
     aggregateQuery.push({
-      $addField: {
+      $addFields: {
         fullname: {
           $concat: ['$first_name', ' ', '$last_name'],
         },
@@ -29,7 +31,7 @@ const GetAllUsers = async (parent, { filter, sorting, pagination }) => {
     }
 
     if (filter.user_type) {
-      queryFilter.$and.push({ user_type: filter.user_type });
+      queryFilter.$and.push({ user_type: new ObjectId(filter.user_type) });
     }
 
     if (filter.username) {
@@ -51,7 +53,7 @@ const GetAllUsers = async (parent, { filter, sorting, pagination }) => {
           },
         },
         {
-          $addField: {
+          $addFields: {
             user_type_populate: { $arrayElemAt: ['$user_type_populate', 0] },
           },
         }
@@ -61,39 +63,38 @@ const GetAllUsers = async (parent, { filter, sorting, pagination }) => {
     } else if (sorting.username) {
       sort = { ...sort, username: sorting.username === 'asc' ? 1 : -1 };
     }
-
-    aggregateQuery.push(
-      {
-        $match: queryFilter,
-      },
-      {
-        $sort: sort && !_.isEmpty(sort) ? sort : { createAt: -1 },
-      }
-    );
-
-    // use $facet if use pagination
-    if (pagination) {
-      aggregateQuery.push({
-        $facet: {
-          data: [{ $skip: pagination.limit * pagination.page }, { $limit: pagination.limit }],
-          countData: [{ $group: { _id: null, count: { $sum: 1 } } }],
-        },
-      });
-      let users = await UserModel.aggregate(aggregateQuery);
-      return users[0].data.map((user) => {
-        return {
-          ...user,
-          count_document: users[0].countData[0].count,
-        };
-      });
-    } else {
-      let users = await UserModel.aggregate(aggregateQuery);
-      return users.map((user) => {
-        return {
-          ...user,
-        };
-      });
+  }
+  aggregateQuery.push(
+    {
+      $match: queryFilter,
+    },
+    {
+      $sort: sort && !_.isEmpty(sort) ? sort : { createAt: -1 },
     }
+  );
+
+  // use $facet if use pagination
+  if (pagination) {
+    aggregateQuery.push({
+      $facet: {
+        data: [{ $skip: pagination.limit * pagination.page }, { $limit: pagination.limit }],
+        countData: [{ $group: { _id: null, count: { $sum: 1 } } }],
+      },
+    });
+    let users = await UserModel.aggregate(aggregateQuery);
+    return users[0].data.map((user) => {
+      return {
+        ...user,
+        count_document: users[0].countData[0].count,
+      };
+    });
+  } else {
+    let users = await UserModel.aggregate(aggregateQuery);
+    return users.map((user) => {
+      return {
+        ...user,
+      };
+    });
   }
 };
 
@@ -168,7 +169,7 @@ const UpdateUser = async (parent, { _id, user_input }) => {
 
 const DeleteUser = async (parent, { _id }) => {
   const user = await UserModel.findById(_id).populate({ path: 'user_type' });
-  if (user.user_type.name === 'General Admin') {
+  if (user && user.user_type && user.user_type.name === 'General Admin') {
     throw new Error('You cannot delete General Admin user');
   }
   await UserModel.findByIdAndUpdate(_id, {

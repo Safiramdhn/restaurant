@@ -34,9 +34,9 @@ const UserTypedefs = gql`
   }
 
   input UserSorting {
-    full_name: Sorting
-    user_type: Sorting
-    username: Sorting
+    full_name: SortingEnum
+    user_type: SortingEnum
+    username: SortingEnum
   }
 
   extend type Query {
