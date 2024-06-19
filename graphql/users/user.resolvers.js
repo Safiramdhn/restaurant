@@ -169,7 +169,7 @@ const UpdateUser = async (parent, { _id, user_input }) => {
 
 const DeleteUser = async (parent, { _id }) => {
   const user = await UserModel.findById(_id).populate({ path: 'user_type' });
-  if (user.user_type.name === 'General Admin') {
+  if (user && user.user_type && user.user_type.name === 'General Admin') {
     throw new Error('You cannot delete General Admin user');
   }
   await UserModel.findByIdAndUpdate(_id, {
