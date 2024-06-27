@@ -518,6 +518,7 @@ describe('DeleteUser Mutation', () => {
 
 describe('GetAllUsers Query', () => {
   let mockUserModelAggregate;
+  let mockUserModelAggregateWihoutPagination
   let pagination;
 
   // Connect to testing database
@@ -540,6 +541,7 @@ describe('GetAllUsers Query', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     mockUserModelAggregate = jest.spyOn(UserModel, 'aggregate');
+    mockUserModelAggregateWihoutPagination = jest.spyOn(UserModel, 'aggregate')
     pagination = {
       limit: 5,
       page: 0,
@@ -623,6 +625,9 @@ describe('GetAllUsers Query', () => {
     const userSortByUserType = UserTestData.userData.sort((a, b) => a.user_type.name - b.user_type.name);
     // descending sorting
     userSortByUserType.reverse();
+    userSortByUserType.map((user)=>{
+      user.count_document = userSortByUserType.length
+    })
     // mock user aggregate return array of object
     mockUserModelAggregate.mockResolvedValue([
       {
@@ -684,13 +689,13 @@ describe('GetAllUsers Query', () => {
   });
 
   it('Should get users data without using any of filter, sorting or pagination', async () => {
-    mockUserModelAggregate.mockImplementation(UserTestData.fiveUsers);
+    mockUserModelAggregate.mockResolvedValue(UserTestData.fiveUsers);
 
     // get result from get all users query
     const getAllUsersResult = await Query.GetAllUsers(null, {});
 
     // declare expectation before and after result
-    expect(mockUserModelAggregate).toHaveBeenCalled(1);
+    expect(mockUserModelAggregate).toHaveBeenCalledTimes(1);
     expect(getAllUsersResult).toStrictEqual(UserTestData.fiveUsers);
   });
   
@@ -727,7 +732,7 @@ describe('GetAllUsers Query', () => {
     );
 
     // declare expectation before and after result
-    expect(mockUserModelAggregate).toHaveBeenCalled(3);
+    expect(mockUserModelAggregate).toHaveBeenCalledTimes(3);
     expect(filterFullnameResult).toStrictEqual([]);
     expect(filterUsernameResult).toStrictEqual([]);
     expect(filterUserTypeResult).toStrictEqual([]);
