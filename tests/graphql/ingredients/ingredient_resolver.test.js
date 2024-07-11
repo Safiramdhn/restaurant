@@ -6,6 +6,7 @@ const randomstring = require('randomstring');
 const IngredientModel = require('../../../graphql/ingredients/ingredient.model');
 const UserModel = require('../../../graphql/users/user.model');
 const UserTypeModel = require('../../../graphql/userTypes/user_type.model');
+const RecipeModel = require('../../../graphql/recipes/recipe.model');
 const { Mutation } = require('../../../graphql/ingredients/ingredient.resolvers');
 
 const ObjectId = mongoose.Types.ObjectId;
@@ -303,7 +304,7 @@ describe('UpdateIngredient Mutation', () => {
     const ingredientData = ingredientTestData.ingredients[1];
     const existedIngredient = ingredientTestData.ingredients[0];
     const ingredient_input = {
-      name: existedIngredient.name
+      name: existedIngredient.name,
     };
 
     mockUserFindById.mockImplementation(() => {
@@ -328,11 +329,134 @@ describe('UpdateIngredient Mutation', () => {
       };
     });
 
-    await expect(Mutation.UpdateIngredient(null, {ingredient_input}, {userId: userData._id})).rejects.toThrowError(`${ingredient_input.name} is already existed`);
+    await expect(Mutation.UpdateIngredient(null, { ingredient_input }, { userId: userData._id })).rejects.toThrowError(
+      `${ingredient_input.name} is already existed`
+    );
 
     expect(mockUserFindById).toHaveBeenCalledTimes(1);
     expect(mockIngredientFindById).toHaveBeenCalledTimes(1);
     expect(mockIngredientFindOne).toHaveBeenCalledTimes(1);
     expect(mockIngredientFindByIdAndUpdate).not.toHaveBeenCalled();
-  })
+  });
+});
+
+describe('DeleteIngredient Mutation', () => {
+  let mockUserFindById;
+  let mockIngredientFindById;
+  let mockRecipeFind;
+  let mockIngredientFindByIdAndUpdate;
+
+  // initiate before run each testing
+  beforeEach(() => {
+    // clear mock
+    jest.clearAllMocks();
+
+    // define mock for database
+    mockUserFindById = jest.spyOn(UserModel, 'findById');
+    mockIngredientFindById = jest.spyOn(IngredientModel, 'findById');
+    mockRecipeFind = jest.spyOn(RecipeModel, 'find');
+    mockIngredientFindByIdAndUpdate = jest.spyOn(IngredientModel, 'findByIdAndUpdate');
+  });
+
+  it('Should mark as deleted ingredient with id and specific user type', async () => {
+    const userData = ingredientTestData.users[0];
+    const ingredientData = ingredientTestData.ingredients[2];
+
+    mockUserFindById.mockImplementation(() => {
+      return {
+        populate: jest.fn().mockImplementation(() => {
+          return {
+            lean: jest.fn().mockResolvedValue(userData),
+          };
+        }),
+      };
+    });
+
+    mockIngredientFindById.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(ingredientData),
+      };
+    });
+
+    mockRecipeFind.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue([]),
+      };
+    });
+
+    mockIngredientFindByIdAndUpdate.mockResolvedValue({
+      ...ingredientData,
+      status: 'deleted',
+    });
+
+    const deleteIngredientResult = await Mutation.DeleteIngredient(null, { _id: ingredientData._id }, { userId: userData._id });
+
+    expect(mockUserFindById).toHaveBeenCalledTimes(1);
+    expect(mockUserFindById).toHaveBeenCalledWith(userData._id);
+    expect(mockIngredientFindById).toHaveBeenCalledTimes(1);
+    expect(mockRecipeFind).toHaveBeenCalledTimes(1);
+    expect(mockIngredientFindByIdAndUpdate).toHaveBeenCalledTimes(1);
+    expect(deleteIngredientResult).toStrictEqual(`Ingredient ${ingredientData.name} is deleted`);
+  });
+
+  it('Should throw error if user type is not General Admin or Stock Admin', async () => {
+    const userData = ingredientTestData.users[1];
+    const ingredientData = ingredientTestData.ingredients[2];
+
+    mockUserFindById.mockImplementation(() => {
+      return {
+        populate: jest.fn().mockImplementation(() => {
+          return {
+            lean: jest.fn().mockResolvedValue(userData),
+          };
+        }),
+      };
+    });
+
+    await expect(Mutation.AddIngredient(null, { _id: ingredientData._id }, { userId: userData._id })).rejects.toThrowError(
+      'Only General Admin or Stock Admin can add new ingredient'
+    );
+
+    expect(mockUserFindById).toHaveBeenCalledTimes(1);
+    expect(mockIngredientFindById).not.toHaveBeenCalled();
+    expect(mockRecipeFind).not.toHaveBeenCalled();
+    expect(mockIngredientFindByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('Should throw error if ingredient is in published recipe', async () => {
+    const userData = ingredientTestData.users[0];
+    const ingredientData = ingredientTestData.ingredients[1];
+    const recipeData = ingredientTestData.recipe;
+
+    mockUserFindById.mockImplementation(() => {
+      return {
+        populate: jest.fn().mockImplementation(() => {
+          return {
+            lean: jest.fn().mockResolvedValue(userData),
+          };
+        }),
+      };
+    });
+
+    mockIngredientFindById.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(ingredientData),
+      };
+    });
+
+    mockRecipeFind.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue([recipeData]),
+      };
+    });
+
+    await expect(Mutation.DeleteIngredient(null, { _id: ingredientData._id }, { userId: userData._id })).rejects.toThrowError(
+      `Ingredient ${ingredientData.name} is used in published recipe`
+    );
+
+    expect(mockUserFindById).toHaveBeenCalledTimes(1);
+    expect(mockIngredientFindById).toHaveBeenCalledTimes(1);
+    expect(mockRecipeFind).toHaveBeenCalledTimes(1);
+    expect(mockIngredientFindByIdAndUpdate).not.toHaveBeenCalled();
+  });
 });

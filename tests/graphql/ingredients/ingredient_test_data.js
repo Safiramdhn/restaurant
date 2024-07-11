@@ -48,9 +48,44 @@ const ingredients = [
     is_additional_ingredient: false,
     update_histories: [],
   },
+  {
+    _id: new ObjectId('65bcc0d81dda2e3206600fb2'),
+    name: 'Beef',
+    stock_amount: 20,
+    is_available: true,
+    status: 'active',
+    is_additional_ingredient: false,
+    update_histories: [],
+  },
 ];
+
+const recipe = {
+  _id: new ObjectId('65cf1ef40b90db8784b2d37e'),
+  name: 'Chicken Katsu with Rice',
+  is_published: true,
+  status: 'active',
+  price: 23000,
+  is_discount: true,
+  discount: 10,
+  is_best_seller: false,
+  ingredient_details: [
+    {
+      ingredient: new ObjectId('65cf1dd40b90db8784b2d364'),
+      stock_used: 1,
+    },
+    {
+      ingredient: new ObjectId('65bcc07f338ac5da469f76b6'),
+      stock_used: 1,
+    },
+    {
+      ingredient: new ObjectId('65cf1e3e0b90db8784b2d376'),
+      stock_used: 1,
+    },
+  ],
+};
 
 module.exports = {
   users,
   ingredients,
+  recipe,
 };
