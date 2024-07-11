@@ -131,7 +131,7 @@ describe('AddIngredient Mutation', () => {
 
   it('Should throw error if ingredient name is null or empty', async () => {
     const userData = ingredientTestData.users[0];
-    const ingredient_input = {
+    let ingredient_input = {
       stock_amount: 10,
     };
 
@@ -179,7 +179,7 @@ describe('AddIngredient Mutation', () => {
     });
 
     await expect(Mutation.AddIngredient(null, { ingredient_input }, { userId: userData._id })).rejects.toThrowError(
-      `${ingredient_input.name} already existed`
+      `${ingredient_input.name} is already existed`
     );
 
     expect(mockUserFindById).toHaveBeenCalledTimes(1);
@@ -188,3 +188,151 @@ describe('AddIngredient Mutation', () => {
   });
 });
 
+describe('UpdateIngredient Mutation', () => {
+  let mockUserFindById;
+  let mockIngredientFindById;
+  let mockIngredientFindOne;
+  let mockIngredientFindByIdAndUpdate;
+
+  // connect once to database for testing
+  beforeAll(async () => {
+    const mongoURI = `mongodb://${process.env.DB_TESTING_HOST}/${process.env.DB_TESTING_NAME}`;
+    await mongoose.connect(mongoURI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    });
+  });
+
+  // close database connection
+  afterAll(async () => {
+    await mongoose.connection.close();
+  });
+
+  // initiate before run each testing
+  beforeEach(() => {
+    // clear mock
+    jest.clearAllMocks();
+
+    // define mock for database
+    mockUserFindById = jest.spyOn(UserModel, 'findById');
+    mockIngredientFindById = jest.spyOn(IngredientModel, 'findById');
+    mockIngredientFindOne = jest.spyOn(IngredientModel, 'findOne');
+    mockIngredientFindByIdAndUpdate = jest.spyOn(IngredientModel, 'findByIdAndUpdate');
+  });
+
+  it('Should return updated ingredient with id, valid input, and specific usertype', async () => {
+    const ingredientData = ingredientTestData.ingredients[1];
+    const userData = ingredientTestData.users[0];
+    const ingredient_input = {
+      name: randomstring.generate(9),
+      stock_amount: 0,
+    };
+
+    mockUserFindById.mockImplementation(() => {
+      return {
+        populate: jest.fn().mockImplementation(() => {
+          return {
+            lean: jest.fn().mockResolvedValue(userData),
+          };
+        }),
+      };
+    });
+
+    mockIngredientFindById.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(ingredientData),
+      };
+    });
+
+    mockIngredientFindOne.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(null),
+      };
+    });
+
+    mockIngredientFindByIdAndUpdate.mockResolvedValue({
+      ...ingredientData,
+      name: ingredient_input.name,
+      stock_amount: ingredient_input.stock_amount,
+      is_available: false,
+    });
+    const updateIngredientResult = await Mutation.UpdateIngredient(null, { ingredient_input }, { userId: userData._id });
+
+    expect(mockUserFindById).toHaveBeenCalledTimes(1);
+    expect(mockIngredientFindById).toHaveBeenCalledTimes(1);
+    expect(mockIngredientFindOne).toHaveBeenCalledTimes(1);
+    expect(mockIngredientFindByIdAndUpdate).toHaveBeenCalledTimes(1);
+
+    expect(updateIngredientResult.name).toEqual(ingredient_input.name);
+    expect(updateIngredientResult.stock_amount).toEqual(ingredient_input.stock_amount);
+    expect(updateIngredientResult.is_available).toStrictEqual(false);
+    expect(updateIngredientResult.update_histories.user).toStrictEqual(userData._id);
+  });
+
+  it('Should throw error if user type is not General Admin or Stock Admin', async () => {
+    const userData = ingredientTestData.users[1];
+    const ingredient_input = {
+      name: randomstring.generate(9),
+      stock_amount: 10,
+    };
+
+    mockUserFindById.mockImplementation(() => {
+      return {
+        populate: jest.fn().mockImplementation(() => {
+          return {
+            lean: jest.fn().mockResolvedValue(userData),
+          };
+        }),
+      };
+    });
+
+    await expect(Mutation.AddIngredient(null, { ingredient_input }, { userId: userData._id })).rejects.toThrowError(
+      'Only General Admin or Stock Admin can add new ingredient'
+    );
+
+    expect(mockUserFindById).toHaveBeenCalledTimes(1);
+    expect(mockIngredientFindById).not.toHaveBeenCalled();
+    expect(mockIngredientFindOne).not.toHaveBeenCalled();
+    expect(mockIngredientFindByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('Should throw error if ingredient name is already existed', async () => {
+    const userData = ingredientTestData.users[0];
+    const ingredientData = ingredientTestData.ingredients[1];
+    const existedIngredient = ingredientTestData.ingredients[0];
+    const ingredient_input = {
+      name: existedIngredient.name
+    };
+
+    mockUserFindById.mockImplementation(() => {
+      return {
+        populate: jest.fn().mockImplementation(() => {
+          return {
+            lean: jest.fn().mockResolvedValue(userData),
+          };
+        }),
+      };
+    });
+
+    mockIngredientFindById.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(ingredientData),
+      };
+    });
+
+    mockIngredientFindOne.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(existedIngredient),
+      };
+    });
+
+    await expect(Mutation.UpdateIngredient(null, {ingredient_input}, {userId: userData._id})).rejects.toThrowError(`${ingredient_input.name} is already existed`);
+
+    expect(mockUserFindById).toHaveBeenCalledTimes(1);
+    expect(mockIngredientFindById).toHaveBeenCalledTimes(1);
+    expect(mockIngredientFindOne).toHaveBeenCalledTimes(1);
+    expect(mockIngredientFindByIdAndUpdate).not.toHaveBeenCalled();
+  })
+});
