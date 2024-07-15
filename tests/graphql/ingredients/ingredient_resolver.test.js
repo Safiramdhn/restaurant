@@ -5,7 +5,6 @@ const randomstring = require('randomstring');
 
 const IngredientModel = require('../../../graphql/ingredients/ingredient.model');
 const UserModel = require('../../../graphql/users/user.model');
-const UserTypeModel = require('../../../graphql/userTypes/user_type.model');
 const RecipeModel = require('../../../graphql/recipes/recipe.model');
 const { Mutation, Query } = require('../../../graphql/ingredients/ingredient.resolvers');
 
@@ -195,22 +194,6 @@ describe('UpdateIngredient Mutation', () => {
   let mockIngredientModelFindOne;
   let mockIngredientModelFindByIdAndUpdate;
 
-  // connect once to database for testing
-  beforeAll(async () => {
-    const mongoURI = `mongodb://${process.env.DB_TESTING_HOST}/${process.env.DB_TESTING_NAME}`;
-    await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-    });
-  });
-
-  // close database connection
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
-
   // initiate before run each testing
   beforeEach(() => {
     // clear mock
@@ -258,8 +241,14 @@ describe('UpdateIngredient Mutation', () => {
       name: ingredient_input.name,
       stock_amount: ingredient_input.stock_amount,
       is_available: false,
+      update_histories: [
+        {
+          date: '15/07/2024',
+          user: userData._id,
+        },
+      ],
     });
-    const updateIngredientResult = await Mutation.UpdateIngredient(null, { ingredient_input }, { userId: userData._id });
+    const updateIngredientResult = await Mutation.UpdateIngredient(null, {_id: ingredientData._id, ingredient_input }, { userId: userData._id });
 
     expect(mockUserModelFindById).toHaveBeenCalledTimes(1);
     expect(mockIngredientModelFindById).toHaveBeenCalledTimes(1);
@@ -269,11 +258,12 @@ describe('UpdateIngredient Mutation', () => {
     expect(updateIngredientResult.name).toEqual(ingredient_input.name);
     expect(updateIngredientResult.stock_amount).toEqual(ingredient_input.stock_amount);
     expect(updateIngredientResult.is_available).toStrictEqual(false);
-    expect(updateIngredientResult.update_histories.user).toStrictEqual(userData._id);
+    expect(updateIngredientResult.update_histories[0].user).toStrictEqual(userData._id);
   });
 
   it('Should throw error if user type is not General Admin or Stock Admin', async () => {
     const userData = ingredientTestData.users[1];
+    const ingredient = ingredientTestData.ingredients[0];
     const ingredient_input = {
       name: randomstring.generate(9),
       stock_amount: 10,
@@ -289,7 +279,7 @@ describe('UpdateIngredient Mutation', () => {
       };
     });
 
-    await expect(Mutation.AddIngredient(null, { ingredient_input }, { userId: userData._id })).rejects.toThrowError(
+    await expect(Mutation.UpdateIngredient(null, {_id: ingredient._id,  ingredient_input }, { userId: userData._id })).rejects.toThrowError(
       'Only General Admin or Stock Admin can add new ingredient'
     );
 
@@ -329,7 +319,7 @@ describe('UpdateIngredient Mutation', () => {
       };
     });
 
-    await expect(Mutation.UpdateIngredient(null, { ingredient_input }, { userId: userData._id })).rejects.toThrowError(
+    await expect(Mutation.UpdateIngredient(null, {_id: ingredientData._id, ingredient_input }, { userId: userData._id })).rejects.toThrowError(
       `${ingredient_input.name} is already existed`
     );
 
