@@ -170,7 +170,7 @@ const DeleteIngredient = async (parent, { _id }, ctx) => {
     $set: {
       status: 'deleted',
     },
-  }).lean();
+  });
 
   return `Ingredient ${ingredient.name} is deleted`;
 };
