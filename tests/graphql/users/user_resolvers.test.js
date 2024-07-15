@@ -22,22 +22,6 @@ describe('CreateUser Mutation', () => {
   let mockUserTypeModelFindOne;
   let mockUserModelCreate;
 
-  // connect once to database for testing
-  beforeAll(async () => {
-    const mongoURI = `mongodb://${process.env.DB_TESTING_HOST}/${process.env.DB_TESTING_NAME}`;
-    await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-    });
-  });
-
-  // close database connection
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
-
   // initiate before run each testing
   beforeEach(() => {
     // clear mock
@@ -58,6 +42,8 @@ describe('CreateUser Mutation', () => {
   };
 
   it('Should create a user with valid input', async () => {
+    const userType = UserTestData.userTypeGeneralAdmin;
+
     // user model find one return null because no existed user
     mockUserModelFindOne.mockImplementation(() => {
       return {
@@ -65,7 +51,11 @@ describe('CreateUser Mutation', () => {
       };
     });
     // find user type once
-    mockUserTypeModelFindOne.mockImplementationOnce();
+    mockUserTypeModelFindOne.mockImplementation(() =>{
+      return {
+        lean: jest.fn().mockResolvedValue(userType)
+      }
+    });
     encrypt.mockReturnValue(userInput.password);
 
     // user model create return user object
@@ -124,8 +114,12 @@ describe('CreateUser Mutation', () => {
         lean: jest.fn().mockResolvedValue(null),
       };
     });
-    // find user type once
-    mockUserTypeModelFindOne.mockImplementationOnce();
+    // find user type
+    mockUserTypeModelFindOne.mockImplementation(() =>{
+      return {
+        lean: jest.fn().mockResolvedValue(null)
+      }
+    });
 
     // uodate user_type id
     userInput.user_type = new ObjectId();
@@ -142,22 +136,6 @@ describe('CreateUser Mutation', () => {
 
 describe('Login Mutation', () => {
   let mockUserModelFindOne;
-
-  // connect to testing database
-  beforeAll(async () => {
-    const mongoURI = `mongodb://${process.env.DB_TESTING_HOST}/${process.env.DB_TESTING_NAME}`;
-    await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-    });
-  });
-
-  // close connection to database
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
 
   // initiate before run each of test
   beforeEach(() => {
@@ -258,22 +236,6 @@ describe('UpdateUser Mutation', () => {
   let mockUserTypeModelFindOne;
   let mockUserModelFindByIdAndUpdate;
   let user_input;
-
-  // connect to testing database
-  beforeAll(async () => {
-    const mongoURI = `mongodb://${process.env.DB_TESTING_HOST}/${process.env.DB_TESTING_NAME}`;
-    await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-    });
-  });
-
-  // disconnect from testing database
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
 
   // initiate before run each of test
   beforeEach(() => {
@@ -449,22 +411,6 @@ describe('DeleteUser Mutation', () => {
   let mockUserModelFindById;
   let mockUserModelFindByIdAndUpdate;
 
-  // Connect to testing database
-  beforeAll(async () => {
-    const mongoURI = `mongodb://${process.env.DB_TESTING_HOST}/${process.env.DB_TESTING_NAME}`;
-    await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-    });
-  });
-
-  // disconnect from testing database
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
-
   // initiate before run each of test
   beforeEach(() => {
     jest.resetAllMocks();
@@ -520,22 +466,6 @@ describe('GetAllUsers Query', () => {
   let mockUserModelAggregate;
   let mockUserModelAggregateWihoutPagination
   let pagination;
-
-  // Connect to testing database
-  beforeAll(async () => {
-    const mongoURI = `mongodb://${process.env.DB_TESTING_HOST}/${process.env.DB_TESTING_NAME}`;
-    await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-    });
-  });
-
-  // disconnect from testing database
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
 
   // initiate before run each of test
   beforeEach(() => {
@@ -741,22 +671,6 @@ describe('GetAllUsers Query', () => {
 
 describe('GetOneUser Query', () => {
   let mockUserModelFindOne;
-
-  // Connect to testing database
-  beforeAll(async () => {
-    const mongoURI = `mongodb://${process.env.DB_TESTING_HOST}/${process.env.DB_TESTING_NAME}`;
-    await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-    });
-  });
-
-  // disconnect from testing database
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
 
   // initiate before run each of test
   beforeEach(() => {
