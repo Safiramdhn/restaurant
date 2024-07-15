@@ -620,3 +620,27 @@ describe('GetAllIngredients Query', () => {
     expect(getAllIngredientsResult).toEqual(ingredients);
   })
 });
+
+describe('GetOneIngredient Query', () => {
+  let mockIngredientModelFindOne;
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    mockIngredientModelFindOne = jest.spyOn(IngredientModel, 'findOne');
+  });
+
+  it('Should return one active ingredient based on valid id', async()=>{
+    let ingredient = ingredientTestData.ingredients[0];
+
+    mockIngredientModelFindOne.mockImplementation(() => {
+      return {
+        lean: jest.fn().mockResolvedValue(ingredient)
+      }
+    });
+
+    const getOneIngredientResult = await Query.GetOneIngredient(null, {_id: ingredient._id});
+
+    expect(mockIngredientModelFindOne).toHaveBeenCalledTimes(1);
+    expect(getOneIngredientResult).toEqual(ingredient)
+  })
+})
