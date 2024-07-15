@@ -113,7 +113,7 @@ const UpdateIngredient = async (parent, { _id, ingredient_input }, ctx) => {
 
   if (ingredient_input.name && ingredient_input.name !== oldIngredientData.name) {
     // check existed active ingredient with different id
-    const existedIngredient = await IngredientModel.find({
+    const existedIngredient = await IngredientModel.findOne({
       name: ingredient_input.name,
       status: 'active',
       _id: {
