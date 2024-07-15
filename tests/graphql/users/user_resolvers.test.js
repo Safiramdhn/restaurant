@@ -464,7 +464,6 @@ describe('DeleteUser Mutation', () => {
 
 describe('GetAllUsers Query', () => {
   let mockUserModelAggregate;
-  let mockUserModelAggregateWihoutPagination
   let pagination;
 
   // initiate before run each of test
