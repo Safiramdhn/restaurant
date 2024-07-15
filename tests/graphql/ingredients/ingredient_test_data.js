@@ -94,6 +94,15 @@ const ingredients = [
     ],
     count_document: 5,
   },
+  {
+    _id: new ObjectId('65cf1dd40b90db8784b2d364'),
+    name: 'Rice',
+    stock_amount: 70,
+    is_available: true,
+    status: 'active',
+    is_additional_ingredient: false,
+    update_histories: [],
+  },
 ];
 
 const recipe = {

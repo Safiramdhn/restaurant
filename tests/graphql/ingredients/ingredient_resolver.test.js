@@ -1,5 +1,4 @@
 /* eslint-disable no-undef */
-require('dotenv').config();
 const mongoose = require('mongoose');
 const randomstring = require('randomstring');
 
@@ -248,7 +247,7 @@ describe('UpdateIngredient Mutation', () => {
         },
       ],
     });
-    const updateIngredientResult = await Mutation.UpdateIngredient(null, {_id: ingredientData._id, ingredient_input }, { userId: userData._id });
+    const updateIngredientResult = await Mutation.UpdateIngredient(null, { _id: ingredientData._id, ingredient_input }, { userId: userData._id });
 
     expect(mockUserModelFindById).toHaveBeenCalledTimes(1);
     expect(mockIngredientModelFindById).toHaveBeenCalledTimes(1);
@@ -279,7 +278,7 @@ describe('UpdateIngredient Mutation', () => {
       };
     });
 
-    await expect(Mutation.UpdateIngredient(null, {_id: ingredient._id,  ingredient_input }, { userId: userData._id })).rejects.toThrowError(
+    await expect(Mutation.UpdateIngredient(null, { _id: ingredient._id, ingredient_input }, { userId: userData._id })).rejects.toThrowError(
       'Only General Admin or Stock Admin can add new ingredient'
     );
 
@@ -319,7 +318,7 @@ describe('UpdateIngredient Mutation', () => {
       };
     });
 
-    await expect(Mutation.UpdateIngredient(null, {_id: ingredientData._id, ingredient_input }, { userId: userData._id })).rejects.toThrowError(
+    await expect(Mutation.UpdateIngredient(null, { _id: ingredientData._id, ingredient_input }, { userId: userData._id })).rejects.toThrowError(
       `${ingredient_input.name} is already existed`
     );
 
@@ -584,31 +583,37 @@ describe('GetAllIngredients Query', () => {
 
     const getAllIngredientsResult = await Query.GetAllIngredients(null, {
       filter: {
-        name: randomstring.generate(5)
-      }
+        name: randomstring.generate(5),
+      },
     });
 
     expect(mockIngredientModelModelAggregate).toHaveBeenCalledTimes(1);
     expect(getAllIngredientsResult).toEqual([]);
-  })
+  });
 
   it('Should return ingredient data with pagination only', async () => {
-    const ingredients = ingredientTestData.ingredients
-    mockIngredientModelModelAggregate.mockResolvedValue([{
-      data: ingredients,
-      countData: [{
-        _id: null,
-        count: ingredients.length
-      }]
-    }]);
+    const ingredients = ingredientTestData.ingredients;
+    mockIngredientModelModelAggregate.mockResolvedValue([
+      {
+        data: ingredients,
+        countData: [
+          {
+            _id: null,
+            count: ingredients.length,
+          },
+        ],
+      },
+    ]);
 
     const getAllIngredientsResult = await Query.GetAllIngredients(null, {
-      filter: null, sorting: null, pagination
+      filter: null,
+      sorting: null,
+      pagination,
     });
 
     expect(mockIngredientModelModelAggregate).toHaveBeenCalledTimes(1);
     expect(getAllIngredientsResult).toEqual(ingredients);
-  })
+  });
 });
 
 describe('GetOneIngredient Query', () => {
@@ -619,18 +624,18 @@ describe('GetOneIngredient Query', () => {
     mockIngredientModelFindOne = jest.spyOn(IngredientModel, 'findOne');
   });
 
-  it('Should return one active ingredient based on valid id', async()=>{
+  it('Should return one active ingredient based on valid id', async () => {
     let ingredient = ingredientTestData.ingredients[0];
 
     mockIngredientModelFindOne.mockImplementation(() => {
       return {
-        lean: jest.fn().mockResolvedValue(ingredient)
-      }
+        lean: jest.fn().mockResolvedValue(ingredient),
+      };
     });
 
-    const getOneIngredientResult = await Query.GetOneIngredient(null, {_id: ingredient._id});
+    const getOneIngredientResult = await Query.GetOneIngredient(null, { _id: ingredient._id });
 
     expect(mockIngredientModelFindOne).toHaveBeenCalledTimes(1);
-    expect(getOneIngredientResult).toEqual(ingredient)
-  })
-})
+    expect(getOneIngredientResult).toEqual(ingredient);
+  });
+});
