@@ -89,7 +89,7 @@ const AddIngredient = async (parent, { ingredient_input }, ctx) => {
       name: ingredient_input.name,
       status: 'active',
     }).lean();
-    if (existedIngredient) throw new Error(`Ingredient's name already existed`);
+    if (existedIngredient) throw new Error(`${ingredient_input.name} is already existed`);
   }
 
   // update ingredient availablity when stock amount more than 0
