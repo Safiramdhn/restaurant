@@ -38,6 +38,7 @@ const ingredients = [
     status: 'active',
     is_additional_ingredient: false,
     update_histories: [],
+    count_document: 5,
   },
   {
     _id: new ObjectId('65cf1e3e0b90db8784b2d376'),
@@ -47,6 +48,7 @@ const ingredients = [
     status: 'active',
     is_additional_ingredient: false,
     update_histories: [],
+    count_document: 5,
   },
   {
     _id: new ObjectId('65bcc0d81dda2e3206600fb2'),
@@ -56,6 +58,41 @@ const ingredients = [
     status: 'active',
     is_additional_ingredient: false,
     update_histories: [],
+    count_document: 5,
+  },
+  {
+    _id: new ObjectId('65bcc0ec1dda2e3206600fb8'),
+    name: 'Onion',
+    stock_amount: 10,
+    is_available: true,
+    status: 'active',
+    is_additional_ingredient: true,
+    update_histories: [
+      {
+        date: '10/02/2024',
+        user: new ObjectId('65bb4ca26318c077484c12c0'),
+      },
+    ],
+    count_document: 5,
+  },
+  {
+    _id: new ObjectId('65bcc0ff1dda2e3206600fbe'),
+    name: 'Egg',
+    stock_amount: 26,
+    is_available: true,
+    status: 'active',
+    is_additional_ingredient: false,
+    update_histories: [
+      {
+        date: '05/02/2024',
+        user: new ObjectId('65bb4bb4e163fb4bcfd20999'),
+      },
+      {
+        date: '05/02/2024',
+        user: new ObjectId('65bb4bb4e163fb4bcfd20999'),
+      },
+    ],
+    count_document: 5,
   },
 ];
 
