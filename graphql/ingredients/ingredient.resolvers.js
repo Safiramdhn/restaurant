@@ -164,7 +164,7 @@ const DeleteIngredient = async (parent, { _id }, ctx) => {
       }
     }
   }).lean();
-  if(checkInRecipes.length) throw new Error(`Ingredient ${ingredient.name} is used in published recipe`)
+  if(checkInRecipes && checkInRecipes.length) throw new Error(`Ingredient ${ingredient.name} is used in published recipe`)
 
   await IngredientModel.findByIdAndUpdate(_id, {
     $set: {
