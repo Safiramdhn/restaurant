@@ -89,7 +89,7 @@ const AddIngredient = async (parent, { ingredient_input }, ctx) => {
       name: ingredient_input.name,
       status: 'active',
     }).lean();
-    if (existedIngredient) throw new Error(`Ingredient's name already existed`);
+    if (existedIngredient) throw new Error(`${ingredient_input.name} is already existed`);
   }
 
   // update ingredient availablity when stock amount more than 0
@@ -113,14 +113,14 @@ const UpdateIngredient = async (parent, { _id, ingredient_input }, ctx) => {
 
   if (ingredient_input.name && ingredient_input.name !== oldIngredientData.name) {
     // check existed active ingredient with different id
-    const existedIngredient = await IngredientModel.find({
+    const existedIngredient = await IngredientModel.findOne({
       name: ingredient_input.name,
       status: 'active',
       _id: {
         $ne: _id,
       },
     }).lean();
-    if (existedIngredient) throw new Error(`This ingredient's name already exists`);
+    if (existedIngredient) throw new Error(`${ingredient_input.name} is already existed`);
   }
 
   // update ingredient availablity when stock amount more than 0
@@ -164,13 +164,13 @@ const DeleteIngredient = async (parent, { _id }, ctx) => {
       }
     }
   }).lean();
-  if(checkInRecipes.length) throw new Error(`Ingredient ${ingredient.name} is used in published recipe`)
+  if(checkInRecipes && checkInRecipes.length) throw new Error(`Ingredient ${ingredient.name} is used in published recipe`)
 
   await IngredientModel.findByIdAndUpdate(_id, {
     $set: {
       status: 'deleted',
     },
-  }).lean();
+  });
 
   return `Ingredient ${ingredient.name} is deleted`;
 };
