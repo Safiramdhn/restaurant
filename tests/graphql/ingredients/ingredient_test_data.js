@@ -29,7 +29,7 @@ const users = [
   },
 ];
 
-const ingredients = [
+let ingredients = [
   {
     _id: new ObjectId('65bcc07f338ac5da469f76b6'),
     name: 'Chicken',
@@ -38,7 +38,6 @@ const ingredients = [
     status: 'active',
     is_additional_ingredient: false,
     update_histories: [],
-    count_document: 5,
   },
   {
     _id: new ObjectId('65cf1e3e0b90db8784b2d376'),
@@ -48,7 +47,6 @@ const ingredients = [
     status: 'active',
     is_additional_ingredient: false,
     update_histories: [],
-    count_document: 5,
   },
   {
     _id: new ObjectId('65bcc0d81dda2e3206600fb2'),
@@ -58,7 +56,7 @@ const ingredients = [
     status: 'active',
     is_additional_ingredient: false,
     update_histories: [],
-    count_document: 5,
+    // ,
   },
   {
     _id: new ObjectId('65bcc0ec1dda2e3206600fb8'),
@@ -73,7 +71,6 @@ const ingredients = [
         user: new ObjectId('65bb4ca26318c077484c12c0'),
       },
     ],
-    count_document: 5,
   },
   {
     _id: new ObjectId('65bcc0ff1dda2e3206600fbe'),
@@ -92,7 +89,6 @@ const ingredients = [
         user: new ObjectId('65bb4bb4e163fb4bcfd20999'),
       },
     ],
-    count_document: 5,
   },
   {
     _id: new ObjectId('65cf1dd40b90db8784b2d364'),
@@ -103,7 +99,10 @@ const ingredients = [
     is_additional_ingredient: false,
     update_histories: [],
   },
-];
+]
+ingredients.map((ingredient) => {
+  ingredient.count_document = ingredients.length
+});
 
 const recipe = {
   _id: new ObjectId('65cf1ef40b90db8784b2d37e'),
